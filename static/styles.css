@@ -1,0 +1,48 @@
+.container
+{
+    /* center contents */
+    margin-left: auto;
+    margin-right: auto;
+    text-align: center;
+}
+
+/* colors for navbar */
+.navbar-default .navbar-brand .blue
+{
+    color: #000000;
+}
+
+#search-btn
+{
+    margin: 0px 4px;
+}
+
+main .form-control
+{
+    /* center form controls */
+    /* display: inline-block;
+
+    /* override Bootstrap's 100% width for form controls */
+    /*width: auto;*/
+}
+
+main img
+{
+    /* constrain images on small screens */
+    max-width: 100%;
+}
+
+table {
+    border-collapse: collapse;
+}
+
+table, th, td {
+    border-bottom: 1px solid #ddd;
+    text-align:left;
+    padding:10px;
+}
+tr:nth-child(even){background-color: #f2f2f2}
+th {
+    background-color: #AAAAFF;
+    color: black;
+}
