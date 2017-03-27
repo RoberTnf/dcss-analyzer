@@ -2,3 +2,6 @@ Flask
 requests
 bs4
 flask_sqlalchemy
+flask_bootstrap
+flas_nav
+flask_session

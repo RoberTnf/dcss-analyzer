@@ -194,9 +194,9 @@ class Morgue(db.Model):
                     db.session.add(skill)
 
 # %% test regex
-regex = re.compile("\w - (.*?)  \s*.+?#|\w - (.*?)  \s*.+?N/A")
-string = ""
-print(re.match(regex, string).groups())
+# regex = re.compile("\w - (.*?)  \s*.+?#|\w - (.*?)  \s*.+?N/A")
+#  string = ""
+# print(re.match(regex, string).groups())
 # %%
 
 
