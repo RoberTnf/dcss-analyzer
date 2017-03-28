@@ -4,7 +4,7 @@ import re
 import os
 import sys
 from bs4 import BeautifulSoup
-from models import Morgue, Skill, Spell
+from models import Morgue
 from application import db
 from os import walk
 from os.path import join
@@ -70,18 +70,8 @@ def load_morgues_to_db(debug=False):
     db.session.commit()
 
 
-def get_abbreviation():
-    """From a race/background, returns its abbreviation.
-    Ex: Spriggan -> Sp
-          Enchanter -> En
-          Hill Orc -> Ho"""
-    return apology("TODO")
-
-
 url = "http://crawl.xtahua.com/crawl/morgue/"
 folder = "morgues/crawl-xtahua/"
-
-
 if len(sys.argv) == 2:
     if sys.argv[1] == "download":
         download_morgues(url, folder, debug=True)

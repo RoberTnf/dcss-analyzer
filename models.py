@@ -15,8 +15,6 @@ class Morgue(db.Model):
     time = db.Column(db.Integer)
     turns = db.Column(db.Integer)
     success = db.Column(db.Boolean)
-    race = db.Column(db.String(40))
-    background = db.Column(db.String(40))
     XL = db.Column(db.Integer)
     Str = db.Column(db.Integer)
     AC = db.Column(db.Integer)
@@ -32,14 +30,17 @@ class Morgue(db.Model):
     date = db.Column(db.Date)
     runes = db.Column(db.Integer)
 
+    race_id = db.Column(db.Integer, db.ForeignKey("abbreviations.id"))
+    race = db.relationship("Abbreviation", foreign_keys=[race_id])
+    background_id = db.Column(db.Integer, db.ForeignKey("abbreviations.id"))
+    background = db.relationship("Abbreviation", foreign_keys=[background_id])
+
     def __init__(self, filename):
         self.version = None
         self.name = None
         self.time = None
         self.turns = None
         self.success = False
-        self.race = False
-        self.background = False
         self.XL = None
         self.Str = None
         self.AC = None
@@ -54,6 +55,8 @@ class Morgue(db.Model):
         self.date = None
         self.filename = filename.split("/")[-1]
         self.runes = 0
+        self.race = None
+        self.background = None
 
         version_regex = re.compile("version ([0-9A-Za-z\.\-]+)")
         name_regex = re.compile("(\d+ )(\w+)( the)")
@@ -110,8 +113,18 @@ class Morgue(db.Model):
                 if not self.race:
                     found = re.search(race_combo_regex, line)
                     if found:
-                        self.race, self.background = \
+                        race_string, background_string =\
                             race_background(found.group(1))
+                        self.race = Abbreviation.query\
+                            .filter_by(string=race_string).first()
+                        if not self.race:
+                            self.race = Abbreviation(race_string)
+                            db.session.add(self.race)
+                        self.background = Abbreviation.query\
+                            .filter_by(string=background_string).first()
+                        if not self.background:
+                            self.background = Abbreviation(background_string)
+                            db.session.add(self.background)
 
                 if not self.XL:
                     found = re.search(XL_regex, line)
@@ -188,11 +201,6 @@ class Morgue(db.Model):
                         spell = Spell(self, found.group(2))
                     db.session.add(spell)
 
-                found = re.match(ability_regex, line)
-                if found:
-                    skill = Skill(self, found.group(1))
-                    db.session.add(skill)
-
 # %% test regex
 # regex = re.compile("\w - (.*?)  \s*.+?#|\w - (.*?)  \s*.+?N/A")
 #  string = ""
@@ -208,13 +216,30 @@ class Skill(db.Model):
     morgue_id = db.Column(db.Integer, db.ForeignKey("morgues.id"))
     morgue = db.relationship("Morgue",
                              backref=db.backref("skills", lazy="dynamic"))
-    skill_name = db.Column(db.String(40))
-    skill_level = db.Column(db.Float)
+    name_id = db.Column(db.Integer, db.ForeignKey("skill_table.id"))
+    name = db.relationship("Skill_table")
+    level = db.Column(db.Float)
 
     def __init__(self, morgue, skill_name, skill_level):
         self.morgue = morgue
+        self.level = skill_level
+        query = Skill_table.query.filter_by(skill_name=skill_name).first()
+        if query:
+            self.name = query
+        else:
+            self.name = Skill_table(skill_name)
+            db.session.add(self.name)
+
+
+class Skill_table(db.Model):
+    """Table containing each skill in the game"""
+    __tablename__ = "skill_table"
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    skill_name = db.Column(db.String(20))
+
+    def __init__(self, skill_name):
         self.skill_name = skill_name
-        self.skill_level = skill_level
 
 
 class Spell(db.Model):
@@ -225,11 +250,42 @@ class Spell(db.Model):
     morgue_id = db.Column(db.Integer, db.ForeignKey("morgues.id"))
     morgue = db.relationship("Morgue",
                              backref=db.backref("spells", lazy="dynamic"))
-    spell_name = db.Column(db.String(40))
+    name_id = db.Column(db.Integer, db.ForeignKey("spell_table.id"))
+    name = db.relationship("Spell_table")
 
     def __init__(self, morgue, spell_name):
         self.morgue = morgue
+        query = Spell_table.query.filter_by(spell_name=spell_name).first()
+        if query:
+            self.name = query
+        else:
+            self.name = Spell_table(spell_name)
+            db.session.add(self.name)
+
+
+class Spell_table(db.Model):
+    """Table containing each spell in the game"""
+    __tablename__ = "spell_table"
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    spell_name = db.Column(db.String(20))
+
+    def __init__(self, spell_name):
         self.spell_name = spell_name
+
+
+class Abbreviation(db.Model):
+    """Links each race/background to its abbreviation, morgues should reffer
+    to a element of this table"""
+    __tablename__ = "abbreviations"
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    abbreviation = db.Column(db.String(4))
+    string = db.Column(db.String(20))
+
+    def __init__(self, string):
+        self.abbreviation = get_abbreviation(string)
+        self.string = string
 
 
 def race_background(race_combo):
@@ -261,3 +317,26 @@ def race_background(race_combo):
 
     else:
         return(words[0], " ".join(words[1:]))
+
+
+def get_abbreviation(string):
+    """From a race/background, returns its abbreviation.
+    Ex: Spriggan -> Sp
+          Enchanter -> En
+          Hill Orc -> Ho"""
+    # List of every race/background whose abbreviation isn't the first 2
+    # letters or the initials of two words
+    weird_abb = {"Demigod": "Dg", "Demonspawn": "Ds", "Draconian": "Dr",
+                 "Gargoyle": "Gr", "Merfolk": "Mf", "Octopode": "Op",
+                 "Vampire": "Vp", "Transmuter": "Tm", "Warper": "Wr",
+                 "Wizard": "Wz", "Conjurer": "Cj", "Artificer": "Ar",
+                 "Wanderer": "Wn"}
+
+    if string in weird_abb.keys():
+        abbreviation = weird_abb[string]
+    elif len(string.split(" ")) == 1:
+        abbreviation = string[:2]
+    else:
+        abbreviation = string.split(" ")[0][0] + string.split(" ")[1][0]
+
+    return abbreviation
