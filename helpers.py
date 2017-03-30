@@ -4,10 +4,11 @@ import re
 import os
 import sys
 from bs4 import BeautifulSoup
-from models import Morgue
-from application import db
+from models import Morgue, BG_abbreviation, Race_abbreviation
+from database import db_session, init_db
 from os import walk
 from os.path import join
+from flask import jsonify
 
 
 def download_morgues(base_url, base_folder="morgues", debug=False):
@@ -54,7 +55,7 @@ def download_morgues(base_url, base_folder="morgues", debug=False):
 
 def load_morgues_to_db(debug=False):
     """Loads all the morgues present in directory "morgues" to DB"""
-    db.create_all()
+    init_db()
     i = 0
     if debug:
         print("loading morgues")
@@ -62,12 +63,60 @@ def load_morgues_to_db(debug=False):
         for filename in [f for f in filenames if f.endswith(".txt")]:
             if not Morgue.query.filter_by(filename=filename).first():
                 run = Morgue(join(dirpath, filename))
-                db.session.add(run)
+                db_session.add(run)
                 i += 1
             elif debug:
                 print("Morgue already in db")
     print("{} morgues loaded".format(i))
-    db.session.commit()
+    db_session.commit()
+
+
+def search(q):
+    results = Race_abbreviation.query.filter(
+        Race_abbreviation.abbreviation.like(q + "%")).all()
+    return jsonify([result.as_dict() for result in results])
+
+
+def stats(q):
+    # variable used to know which context we are dealing with
+    case = None
+    # check if q is an abbreviation and generate stats
+    if len(q) == 2:
+        # check if q = XX is a race or a background
+        race_abv = Race_abbreviation.query.filter_by(abbreviation=q).first()
+        bg_abv = BG_abbreviation.query.filter_by(abbreviation=q).first()
+        if race_abv:
+            case = "race"
+            morgues = db_session.query(Morgue)\
+                .filter(Morgue.race_id == race_abv.id)
+        elif bg_abv:
+            morgues = db_session.query(Morgue)\
+                .filter(Morgue.background_id == bg_abv)
+            case = "background"
+    elif len(q) == 4:
+        race = q[0:2]
+        bg = q[2:]
+        race_abv = Race_abbreviation.query.filter_by(abbreviation=race)\
+            .first().id
+        bg_abv = BG_abbreviation.query.filter_by(abbreviation=bg).first().id
+        if race_abv and bg_abv:
+            morgues = db_session.query(Morgue)\
+                .filter((Morgue.race_id == race_abv) &
+                        (Morgue.background_id == bg_abv))
+            if morgues.count() != 0:
+                case = "race&bg"
+
+    # dictionary which will contain the stats to be jsonified
+    results = {}
+    if case:
+        winners = morgues.filter(Morgue.success == 1)
+        results["winrate"] = winners.count() * 100 / morgues.count()
+        results["wins"] = winners.count()
+        results["games"] = morgues.count()
+        results["case"] = case
+    else:
+        results["case"] = "FAIL"
+    return jsonify([results])
 
 
 url = "http://crawl.xtahua.com/crawl/morgue/"

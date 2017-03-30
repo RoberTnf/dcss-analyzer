@@ -1,39 +1,42 @@
-from application import db
 import re
 from datetime import date
+from sqlalchemy import Column, Integer, String, Boolean
+from sqlalchemy import ForeignKey, Text, Date, Float
+from sqlalchemy.orm import relationship, backref
+from database import Base, db_session
 
 
-class Morgue(db.Model):
-    """Main class of the DB. Holds most information about the run"""
+class Morgue(Base):
+    """Main class of the  Holds most information about the run"""
 
     __tablename__ = "morgues"
     __searchable__ = ["filename", "name", "success"]
 
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    version = db.Column(db.String(30))
-    name = db.Column(db.String(30))
-    time = db.Column(db.Integer)
-    turns = db.Column(db.Integer)
-    success = db.Column(db.Boolean)
-    XL = db.Column(db.Integer)
-    Str = db.Column(db.Integer)
-    AC = db.Column(db.Integer)
-    Int = db.Column(db.Integer)
-    EV = db.Column(db.Integer)
-    Dex = db.Column(db.Integer)
-    SH = db.Column(db.Integer)
-    god = db.Column(db.String(20))
-    faith = db.Column(db.Integer)
-    branch_order = db.Column(db.Text)
-    killer = db.Column(db.String(40))
-    filename = db.Column(db.String(200))
-    date = db.Column(db.Date)
-    runes = db.Column(db.Integer)
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    version = Column(String(30))
+    name = Column(String(30))
+    time = Column(Integer)
+    turns = Column(Integer)
+    success = Column(Boolean)
+    XL = Column(Integer)
+    Str = Column(Integer)
+    AC = Column(Integer)
+    Int = Column(Integer)
+    EV = Column(Integer)
+    Dex = Column(Integer)
+    SH = Column(Integer)
+    god = Column(String(20))
+    faith = Column(Integer)
+    branch_order = Column(Text)
+    killer = Column(String(40))
+    filename = Column(String(200))
+    date = Column(Date)
+    runes = Column(Integer)
 
-    race_id = db.Column(db.Integer, db.ForeignKey("abbreviations.id"))
-    race = db.relationship("Abbreviation", foreign_keys=[race_id])
-    background_id = db.Column(db.Integer, db.ForeignKey("abbreviations.id"))
-    background = db.relationship("Abbreviation", foreign_keys=[background_id])
+    race_id = Column(Integer, ForeignKey("race_abbreviations.id"))
+    race = relationship("Race_abbreviation")
+    background_id = Column(Integer, ForeignKey("bg_abbreviations.id"))
+    background = relationship("BG_abbreviation")
 
     def __init__(self, filename):
         self.version = None
@@ -113,18 +116,23 @@ class Morgue(db.Model):
                 if not self.race:
                     found = re.search(race_combo_regex, line)
                     if found:
+                        # TODO: Get this shit finding shit
                         race_string, background_string =\
                             race_background(found.group(1))
-                        self.race = Abbreviation.query\
-                            .filter_by(string=race_string).first()
+                        self.race = db_session.Race_abbreviation.query\
+                            .filter(Race_abbreviation.string ==
+                                    race_string)\
+                            .first()
+                        print(self.race)
                         if not self.race:
-                            self.race = Abbreviation(race_string)
-                            db.session.add(self.race)
-                        self.background = Abbreviation.query\
+                            self.race = Race_abbreviation(race_string)
+                            db_session.add(self.race)
+                        self.background = BG_abbreviation.query\
                             .filter_by(string=background_string).first()
                         if not self.background:
-                            self.background = Abbreviation(background_string)
-                            db.session.add(self.background)
+                            self.background = BG_abbreviation(
+                                background_string)
+                            db_session.add(self.background)
 
                 if not self.XL:
                     found = re.search(XL_regex, line)
@@ -190,7 +198,7 @@ class Morgue(db.Model):
                 found = re.match(skill_regex, line)
                 if found:
                     skill = Skill(self, found.group(2), found.group(1))
-                    db.session.add(skill)
+                    db_session.add(skill)
 
                 # check for spells
                 found = re.match(spell_regex, line)
@@ -199,7 +207,11 @@ class Morgue(db.Model):
                         spell = Spell(self, found.group(1))
                     else:
                         spell = Spell(self, found.group(2))
-                    db.session.add(spell)
+                    db_session.add(spell)
+
+    def as_dict(self):
+        return {c.name: getattr(self, c.name)
+                for c in self.__table__.columns}
 
 # %% test regex
 # regex = re.compile("\w - (.*?)  \s*.+?#|\w - (.*?)  \s*.+?N/A")
@@ -208,17 +220,17 @@ class Morgue(db.Model):
 # %%
 
 
-class Skill(db.Model):
+class Skill(Base):
     """Stores learned skills, backrefs to morgue"""
     __tablename__ = "skills"
 
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    morgue_id = db.Column(db.Integer, db.ForeignKey("morgues.id"))
-    morgue = db.relationship("Morgue",
-                             backref=db.backref("skills", lazy="dynamic"))
-    name_id = db.Column(db.Integer, db.ForeignKey("skill_table.id"))
-    name = db.relationship("Skill_table")
-    level = db.Column(db.Float)
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    morgue_id = Column(Integer, ForeignKey("morgues.id"))
+    morgue = relationship("Morgue",
+                          backref=backref("skills", lazy="dynamic"))
+    name_id = Column(Integer, ForeignKey("skill_table.id"))
+    name = relationship("Skill_table")
+    level = Column(Float)
 
     def __init__(self, morgue, skill_name, skill_level):
         self.morgue = morgue
@@ -228,30 +240,30 @@ class Skill(db.Model):
             self.name = query
         else:
             self.name = Skill_table(skill_name)
-            db.session.add(self.name)
+            db_session.add(self.name)
 
 
-class Skill_table(db.Model):
+class Skill_table(Base):
     """Table containing each skill in the game"""
     __tablename__ = "skill_table"
 
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    skill_name = db.Column(db.String(20))
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    skill_name = Column(String(20))
 
     def __init__(self, skill_name):
         self.skill_name = skill_name
 
 
-class Spell(db.Model):
+class Spell(Base):
     """Stores learned spells, backrefs to morgue"""
     __tablename__ = "spells"
 
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    morgue_id = db.Column(db.Integer, db.ForeignKey("morgues.id"))
-    morgue = db.relationship("Morgue",
-                             backref=db.backref("spells", lazy="dynamic"))
-    name_id = db.Column(db.Integer, db.ForeignKey("spell_table.id"))
-    name = db.relationship("Spell_table")
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    morgue_id = Column(Integer, ForeignKey("morgues.id"))
+    morgue = relationship("Morgue",
+                          backref=backref("spells", lazy="dynamic"))
+    name_id = Column(Integer, ForeignKey("spell_table.id"))
+    name = relationship("Spell_table")
 
     def __init__(self, morgue, spell_name):
         self.morgue = morgue
@@ -260,32 +272,56 @@ class Spell(db.Model):
             self.name = query
         else:
             self.name = Spell_table(spell_name)
-            db.session.add(self.name)
+            db_session.add(self.name)
 
 
-class Spell_table(db.Model):
+class Spell_table(Base):
     """Table containing each spell in the game"""
     __tablename__ = "spell_table"
 
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    spell_name = db.Column(db.String(20))
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    spell_name = Column(String(20))
 
     def __init__(self, spell_name):
         self.spell_name = spell_name
 
 
-class Abbreviation(db.Model):
-    """Links each race/background to its abbreviation, morgues should reffer
+class Race_abbreviation(Base):
+    """Links each race to its abbreviation, morgues should reffer
     to a element of this table"""
-    __tablename__ = "abbreviations"
+    __tablename__ = "race_abbreviations"
+    __searchable__ = "abbreviation"
 
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    abbreviation = db.Column(db.String(4))
-    string = db.Column(db.String(20))
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    abbreviation = Column(String(4))
+    string = Column(String(20))
 
     def __init__(self, string):
         self.abbreviation = get_abbreviation(string)
         self.string = string
+
+    def as_dict(self):
+        return {c.name: getattr(self, c.name)
+                for c in self.__table__.columns}
+
+
+class BG_abbreviation(Base):
+    """Links each background to its abbreviation, morgues should reffer
+    to a element of this table"""
+    __tablename__ = "bg_abbreviations"
+    __searchable__ = "abbreviation"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    abbreviation = Column(String(4))
+    string = Column(String(20))
+
+    def __init__(self, string):
+        self.abbreviation = get_abbreviation(string)
+        self.string = string
+
+    def as_dict(self):
+        return {c.name: getattr(self, c.name)
+                for c in self.__table__.columns}
 
 
 def race_background(race_combo):

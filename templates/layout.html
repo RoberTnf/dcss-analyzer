@@ -16,6 +16,17 @@
         <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
         <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
 
+        <!-- https://github.com/corejavascript/typeahead.js/blob/master/doc/jquery_typeahead.md -->
+        <script src="https://cdn.rawgit.com/corejavascript/typeahead.js/master/dist/typeahead.jquery.js"></script>
+
+        <!-- http://handlebarsjs.com/ -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/handlebars.js/4.0.5/handlebars.min.js"></script>
+
+        <script src="{{ url_for('static', filename='scripts.js') }}"></script>
+
+        <!-- http://stewartjpark.com/Flask-JSGlue/ -->
+        {{ JSGlue.include() }}
+
         <title>DCSS analyzer {% block title %}{% endblock %}</title>
 
     </head>
@@ -42,7 +53,7 @@
                             </ul>
                             <form action="search" class="navbar-form navbar-right">
                                <div class="input-group">
-                                   <input type="Search" placeholder="Search..." class="form-control" name="q"/>
+                                   <input type="Search" placeholder="Search..." class="form-control" name="q" id="q" autocomplete="off"/>
                                    <div class="input-group-btn">
                                        <button class="btn btn-info">
                                        <span class="glyphicon glyphicon-search"></span>

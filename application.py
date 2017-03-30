@@ -1,18 +1,20 @@
-from flask import Flask, flash, redirect, render_template, request, session, url_for
-from flask_session import Session
+import flask
+import helpers
 from flask_sqlalchemy import SQLAlchemy
+from flask_jsglue import JSGlue
+from database import db_session
 
-app = Flask(__name__)
+app = flask.Flask(__name__)
+
+JSGlue(app)
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///database.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
 
-import models
-
 
 @app.route('/')
 def index():
-    return render_template("test.html")
+    return flask.render_template("test.html")
 
 
 @app.route("/about")
@@ -22,10 +24,21 @@ def about():
 
 @app.route("/search")
 def search():
-    if not request.args.get("q"):
-        return apology("need to search for something")
-    return apology("TODO")
+    q = flask.request.args.get("q")
+    return helpers.search(q)
 
 
 def apology(text):
-    return render_template("apology.html", text=text)
+    return flask.render_template("apology.html", text=text)
+
+
+@app.route("/stats")
+def stats():
+    """Gets stats to be represented from string"""
+    q = flask.request.args.get("q")
+    return helpers.stats(q)
+
+
+@app.teardown_appcontext
+def shutdown_session(Exception=None):
+    db_session.remove()
