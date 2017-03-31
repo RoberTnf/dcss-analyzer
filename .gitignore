@@ -2,3 +2,4 @@ morgues
 tmp
 __pycache__
 database.db
+test.py

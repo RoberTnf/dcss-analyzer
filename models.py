@@ -10,7 +10,7 @@ class Morgue(Base):
     """Main class of the  Holds most information about the run"""
 
     __tablename__ = "morgues"
-    __searchable__ = ["filename", "name", "success"]
+    __searchable__ = ["filename", "name", "success", "version", "god", "runes"]
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     version = Column(String(30))
@@ -60,10 +60,11 @@ class Morgue(Base):
         self.runes = 0
         self.race = None
         self.background = None
+        self.crawl = True
 
         version_regex = re.compile("version ([0-9A-Za-z\.\-]+)")
         name_regex = re.compile("(\d+ )(\w+)( the)")
-        time_regex = re.compile("lasted (\d\d:\d\d:\d\d) \((\d+)")
+        time_regex = re.compile("lasted (\d*).*?(\d\d:\d\d:\d\d) \((\d+)")
         success_regex = re.compile("Escaped with the Orb")
         race_combo_regex = re.compile("Began as an* (.*) on")
         XL_regex = re.compile("AC.+?(\d+).+?Str.+?(\d+).+?XL.+?(\d+)")
@@ -90,6 +91,9 @@ class Morgue(Base):
                     found = re.search(version_regex, line)
                     if found:
                         self.version = found.group(1)
+                        if "Sprint" in line:
+                            self.crawl = False
+                            break
 
                 if not self.name:
                     found = re.search(killer_regex, line)
@@ -105,8 +109,15 @@ class Morgue(Base):
                 if not self.time:
                     found = re.search(time_regex, line)
                     if found:
-                        self.time = found.group(1)
-                        self.turns = found.group(2)
+                        days = found.group(1)
+                        time = [int(i) for i in found.group(2).split(":")]
+                        self.turns = found.group(3)
+                        # time in seconds
+                        if not days:
+                            days = 0
+                        else:
+                            days = int(days)
+                        self.time = days*86400+time[0]*3600+time[1]*60+time[2]
 
                 if not self.success:
                     found = re.search(success_regex, line)
@@ -119,11 +130,8 @@ class Morgue(Base):
                         # TODO: Get this shit finding shit
                         race_string, background_string =\
                             race_background(found.group(1))
-                        self.race = db_session.Race_abbreviation.query\
-                            .filter(Race_abbreviation.string ==
-                                    race_string)\
-                            .first()
-                        print(self.race)
+                        self.race = Race_abbreviation.query.filter_by(
+                            string=race_string).first()
                         if not self.race:
                             self.race = Race_abbreviation(race_string)
                             db_session.add(self.race)
@@ -178,12 +186,7 @@ class Morgue(Base):
                 found = re.search(branch_regex, line)
                 if found:
                     branch = found.group(1)
-                    if branch.find(":") >= 0:
-                        branch = branch.split(":")
-                        branch = branch[0][0] + branch[1]
-                    if branch not in self.branch_order and \
-                            branch[0][0].isalpha():
-                        self.branch_order += branch+" "
+                    self.parse_branch_order(branch)
 
                 # check for runes
                 if not self.runes:
@@ -213,10 +216,35 @@ class Morgue(Base):
         return {c.name: getattr(self, c.name)
                 for c in self.__table__.columns}
 
+    def parse_branch_order(self, branch_string):
+        """Adds to morgue.branch_order branch correctly"""
+        # we won't add unique dungeons like sewer, volcanos...
+        if self.branch_order:
+            branch_order_list = self.branch_order.split()
+        if branch_string.find(":") >= 0:
+            branch_list = branch_string.split(":")
+            branch = branch_list[0][0]
+            floor = branch_list[1]
+            # check that branch follows our expected format
+            if branch.isalpha() and floor.isnumeric():
+                # check if we have already visited branch
+                if self.branch_order:
+                    if branch in self.branch_order:
+                        for i, visited_branch in enumerate(branch_order_list):
+                            if visited_branch[0] == branch:
+                                if int(floor) > int(visited_branch.split("-")[1]):
+                                    branch_order_list[i] = visited_branch.split("-")[0] + "-" + floor
+                                    self.branch_order = " ".join(branch_order_list) + " "
+                    else:
+                        self.branch_order += "{}{}-{} ".format(branch, floor, floor)
+                else:
+                    self.branch_order = "{}{}-{} ".format(branch, floor, floor)
+
+
 # %% test regex
-# regex = re.compile("\w - (.*?)  \s*.+?#|\w - (.*?)  \s*.+?N/A")
-#  string = ""
-# print(re.match(regex, string).groups())
+# regex = re.compile("lasted (\d*).*?(\d\d:\d\d:\d\d) \((\d+)")
+# string = "             The game lasted 00:02:17 (1841 turns)."
+# print(re.search(regex, string).groups())
 # %%
 
 
@@ -333,11 +361,15 @@ def race_background(race_combo):
     "Gargoyle Earth Elementalist" -> "Gargoyle", "Earth Elementalist" """
 
     # list of all the races consisting of 2 words, might change
-    two_word_races = ["Hill Orc", "Deep Elf", "Deep Dwarf", "Vine Stalker"]
+    two_word_races = ["Hill Orc", "Deep Elf", "Deep Dwarf", "Vine Stalker",
+                      "High Elf", "High Dwarf", "Grey Elf", "Gnome",
+                      "Mountain Dwarf", "Sludge Elf"]
 
     # separate line into a list of words
     words = race_combo.split()
 
+    if "Draconian" in words:
+        return("Draconian", "".join(words[words.index("Draconian") + 1:]))
     # if only two words, it is already separated
     if len(words) == 2:
         return words

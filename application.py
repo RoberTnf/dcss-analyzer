@@ -35,8 +35,7 @@ def apology(text):
 @app.route("/stats")
 def stats():
     """Gets stats to be represented from string"""
-    q = flask.request.args.get("q")
-    return helpers.stats(q)
+    return helpers.stats(**flask.request.args)
 
 
 @app.teardown_appcontext

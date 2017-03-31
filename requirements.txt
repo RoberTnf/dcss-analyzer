@@ -6,3 +6,4 @@ flask_bootstrap
 flas_nav
 flask_session
 flask_jsglue
+numpy
