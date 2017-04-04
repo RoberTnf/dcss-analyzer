@@ -63,7 +63,9 @@ def load_morgues_to_db(debug=False, n=0):
     for dirpath, dirnames, filenames in walk("morgues"):
         for filename in [f for f in filenames if f.endswith(".txt")]:
             if i >= n and n > 0:
-                break
+                print("{} morgues loaded".format(i))
+                db_session.commit()
+                return
             if not Morgue.query.filter_by(filename=filename).first():
                 run = Morgue(join(dirpath, filename))
                 if run.crawl:

@@ -221,24 +221,23 @@ class Morgue(Base):
         # we won't add unique dungeons like sewer, volcanos...
         if self.branch_order:
             branch_order_list = self.branch_order.split()
+
         if branch_string.find(":") >= 0:
             branch_list = branch_string.split(":")
-            branch = branch_list[0][0]
+            branch = get_branch_abbreviation(branch_list[0])
             floor = branch_list[1]
             # check that branch follows our expected format
             if branch.isalpha() and floor.isnumeric():
                 # check if we have already visited branch
                 if self.branch_order:
-                    if branch in self.branch_order:
-                        for i, visited_branch in enumerate(branch_order_list):
-                            if visited_branch[0] == branch:
-                                if int(floor) > int(visited_branch.split("-")[1]):
-                                    branch_order_list[i] = visited_branch.split("-")[0] + "-" + floor
-                                    self.branch_order = " ".join(branch_order_list) + " "
+                    if branch in branch_order_list[-1]:
+                        if int(floor) > int(branch_order_list[-1].split("-")[1]):
+                            branch_order_list[-1] = self.branch_order.split("-")[0] + "-" + floor.strip()
+                            self.branch_order = " ".join(branch_order_list) + " "
                     else:
-                        self.branch_order += "{}{}-{} ".format(branch, floor, floor)
+                        self.branch_order += "{}{}-{} ".format(branch.strip(), floor.strip(), floor.strip())
                 else:
-                    self.branch_order = "{}{}-{} ".format(branch, floor, floor)
+                    self.branch_order = "{}{}-{} ".format(branch.strip(), floor.strip(), floor.strip())
 
 
 # %% test regex
@@ -408,3 +407,18 @@ def get_abbreviation(string):
         abbreviation = string.split(" ")[0][0] + string.split(" ")[1][0]
 
     return abbreviation
+
+
+def get_branch_abbreviation(branch_string):
+    """Returns branch_abbreviation checking for collissions.
+    Dungeon -> D, Depths -> U"""
+
+    weird_abb = {"Shoals": "A", "Snake": "P", "Spider": "N", "Slime": "M",
+                 "Vaults": "V", "Tomb": "W", "Depths": "U", "Abyss": "J",
+                 "Pandemonium": "R"}
+
+    weird = weird_abb.get(branch_string.split(" ")[0])
+    if weird:
+        return weird
+    else:
+        return branch_string[0]
