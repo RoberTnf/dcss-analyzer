@@ -19,7 +19,7 @@ def download_morgues(base_url, base_folder="morgues", debug=False):
         print("Indexing each user morgue's folder for {}".format(base_url))
     resp_base = urllib.request.urlopen(base_url)
     soup_base = BeautifulSoup(
-        resp_base, "html5lib",
+        resp_base, "lxml",
         from_encoding=resp_base.info().get_param('charset'))
 
     # get links to each morgue for user
@@ -31,7 +31,7 @@ def download_morgues(base_url, base_folder="morgues", debug=False):
                 print("Link : {}".format(base_url + user["href"]))
             resp_user = urllib.request.urlopen(base_url + user["href"])
             soup_user = BeautifulSoup(
-                resp_user, "html5lib",
+                resp_user, "lxml",
                 from_encoding=resp_user.info().get_param('charset'))
 
             # create directory for user
@@ -86,6 +86,7 @@ def search(q):
 
 
 def stats(**kwargs):
+    # TODO: add cached responses, update 24hours
     results = {}
     morgues = Morgue.query
     case = None
@@ -108,9 +109,13 @@ def stats(**kwargs):
                     Morgue.background_id == id)
                 case = "bg"
         elif len(abv) == 4:
+            bg_id = BG_abbreviation.query.filter(
+                BG_abbreviation.abbreviation == abv[2:]).first().id
+            race_id = Race_abbreviation.query.filter(
+                Race_abbreviation.abbreviation == abv[:2]).first().id
             morgues = morgues.filter(
-                (Race_abbreviation.abbreviation == abv[:2]) &
-                (BG_abbreviation.abbreviation == abv[2:]))
+                (Morgue.race_id == bg_id) &
+                (Morgue.background_id == race_id))
             case = "combo"
 
     # apply filters provided in kwargs
@@ -177,8 +182,6 @@ def stats(**kwargs):
         killers = [m.killer for m in morgues.all() if
                    (m.killer != "quit" and m.killer != "won")]
         results["most_common_killer"] = most_common(killers)
-
-    # TODO: add most common race, background
 
     return jsonify(results)
 

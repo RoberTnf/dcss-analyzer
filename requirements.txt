@@ -7,3 +7,4 @@ flask_nav
 flask_session
 flask_jsglue
 numpy
+lxml
