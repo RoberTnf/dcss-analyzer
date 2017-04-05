@@ -1,85 +1,61 @@
-<!DOCTYPE html>
+<!DOCTYPE HTML>
+<!--
+	Dopetrope by HTML5 UP
+	html5up.net | @ajlkn
+	Free for personal and commercial use under the CCA 3.0 license (html5up.net/license)
+-->
+<html>
+	<head>
+		<title>DCSS Analyzer: {% block title %}{% endblock %}</title>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<!--[if lte IE 8]><script src="static/js/ie/html5shiv.js"></script><![endif]-->
+		<link rel="stylesheet" href="static/css/main.css" />
+		<!--[if lte IE 8]><link rel="stylesheet" href="static/css/ie8.css" /><![endif]-->
+	</head>
+	<body class="homepage">
+		<div id="page-wrapper">
 
-<html lang="en">
+			<!-- Header -->
+				<div id="header-wrapper">
+					<div id="header">
 
-    <head>
+						<!-- Logo -->
+							<h1><a href="{{url_for("index")}}">DCSS Analyzer</a></h1>
 
-        <!-- https://developer.mozilla.org/en-US/docs/Web/HTML/Element/meta -->
-        <meta charset="utf-8"/>
-        <meta content="initial-scale=1, width=device-width" name="viewport"/>
+						<!-- Nav -->
+							<nav id="nav">
+								<ul>
+									<li class="current"><a href="{{url_for("index")}}">Home</a></li>
+									<li>
+										<a href="#">Features</a>
+										<ul>
+											<li><a href="{{url_for("morgue_analyzer")}}">Morgue Analyzer</a></li>
+											<li><a href="{{url_for("statistics")}}">Statistics</a></li>
+										</ul>
+									</li>
+									<li><a href="{{url_for("about")}}">About</a></li>
+								</ul>
+							</nav>
 
-        <!-- documentation at http://getbootstrap.com/, alternative themes at https://www.bootstrapcdn.com/bootswatch/ -->
-        <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet"/>
+						<!-- Banner -->
+							<section id="banner">
+								<header>
+									{% block header %}{% endblock %}
+								</header>
+							</section>
+					</div>
+				</div>
+		</div>
 
-        <link href="{{ url_for('static', filename='styles.css') }}" rel="stylesheet"/>
+		<!-- Scripts -->
+			<script src="static/js/jquery.min.js"></script>
+			<script src="static/js/jquery.dropotron.min.js"></script>
+			<script src="static/js/skel.min.js"></script>
+			<script src="static/js/skel-viewport.min.js"></script>
+			<script src="static/js/util.js"></script>
+			<!--[if lte IE 8]><script src="static/js/ie/respond.min.js"></script><![endif]-->
+			<script src="static/js/main.js"></script>
 
-        <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
-        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
-
-        <!-- https://github.com/corejavascript/typeahead.js/blob/master/doc/jquery_typeahead.md -->
-        <script src="https://cdn.rawgit.com/corejavascript/typeahead.js/master/dist/typeahead.jquery.js"></script>
-
-        <!-- http://handlebarsjs.com/ -->
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/handlebars.js/4.0.5/handlebars.min.js"></script>
-
-        <!-- http://stewartjpark.com/Flask-JSGlue/ -->
-        {{ JSGlue.include() }}
-
-        <script src="{{ url_for('static', filename='scripts.js') }}"></script>
-
-        <title>DCSS analyzer {% block title %}{% endblock %}</title>
-
-    </head>
-
-    <body>
-
-        <div class="container">
-
-            <nav class="navbar navbar-default">
-                <div class="container-fluid">
-                    <div class="navbar-header">
-                        <button aria-expanded="false" class="navbar-toggle collapsed" data-target="#navbar" data-toggle="collapse" type="button">
-                            <span class="sr-only">Toggle navigation</span>
-                            <span class="icon-bar"></span>
-                            <span class="icon-bar"></span>
-                            <span class="icon-bar"></span>
-                        </button>
-                        <a class="navbar-brand" href="{{ url_for('index') }}"><span class="blue">DCSS analyzer</span></a>
-                    </div>
-                    <div class="collapse navbar-collapse" id="navbar">
-                            <ul class="nav navbar-nav">
-                                <li><a href="{{ url_for('index') }}">Index</a></li>
-                                 <li><a href="{{ url_for('about') }}">About</a></li>
-                            </ul>
-                            <form action="search" class="navbar-form navbar-right">
-                               <div class="input-group">
-                                   <input type="Search" placeholder="Search..." class="form-control" name="q" id="q" autocomplete="off"/>
-                                   <div class="input-group-btn">
-                                       <button class="btn btn-info">
-                                       <span class="glyphicon glyphicon-search"></span>
-                                       </button>
-                                   </div>
-                               </div>
-                            </form>
-                    </div>
-                </div>
-            </nav>
-
-            {% if get_flashed_messages() %}
-                <header>
-                    <div class="alert alert-info" role="alert">
-                        {{ get_flashed_messages() | join(" ") }}
-                    </div>
-                </header>
-            {% endif %}
-
-            <main>
-                {% block main %}{% endblock %}
-                <h1>{% block scream %}{% endblock %}</h1>
-            </main>
-
-        </div>
-
-    </body>
-
+	</body>
 </html>
