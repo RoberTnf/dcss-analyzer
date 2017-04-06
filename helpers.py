@@ -10,6 +10,11 @@ from database import db_session, init_db
 from os import walk
 from os.path import join
 from flask import jsonify, json
+from sqlalchemy.sql.expression import func
+from operator import itemgetter
+from os.path import isfile
+
+N_TO_CACHE = 100
 
 
 def download_morgues(base_url, base_folder="morgues", debug=False):
@@ -95,22 +100,22 @@ def stats(**kwargs):
         request += "{}={}&".format(key, kwargs[key][0])
 
     # if it has been searched
-    request = StatRequest.query.filter(StatRequest.request == request).first()
-    if request:
+    stat = StatRequest.query.filter(StatRequest.request == request).first()
+    if stat:
         # if cached, just load it
-        if cached(request):
-            json_url = open(
-                os.path.join("cached", "{}.json".format(request), "r"))
-            json_data = json.load(json_url)
-            request.times += 1
+        if cached(stat):
+            json_data = json.load(open("cached/{}.json".format(request)))
+            stat.times += 1
             db_session.commit()
-            return(json_data)
-
+            return jsonify(json_data)
+        else:
+            stat.times += 1
+            db_session.commit()
     else:
-        StatRequest.insert.values(request=request)
+        stat = StatRequest(request=request)
+        db_session.add(stat)
         db_session.commit()
 
-    update_cached(request)
     results = {}
     morgues = Morgue.query
     case = None
@@ -207,15 +212,25 @@ def stats(**kwargs):
                    (m.killer != "quit" and m.killer != "won")]
         results["most_common_killer"] = most_common(killers)
 
+
+    update_cached(stat, results)
+
     return jsonify(results)
 
 
-def update_cached(json):
-    pass
+def update_cached(stat, results):
+    """Checks if stat, (from StatRequest), needs to be cached"""
+    # get and sort stats
+    stats = StatRequest.query.all()
+    stats.sort(key=lambda x: x.times, reverse=True)
+
+    if stat in stats[:N_TO_CACHE]:
+        json.dump(results, open("cached/{}.json".format(stat.request), "w"))
+    return True
 
 
-def cached(request):
-    pass
+def cached(stat):
+    return isfile("cached/{}.json".format(stat.request))
 
 
 def most_common(lst):

@@ -20,7 +20,7 @@ class StatRequest(Base):
 
     def __init__(self, request):
         self.request = request
-        self.times = 0
+        self.times = 1
 
 
 class Morgue(Base):
@@ -173,16 +173,17 @@ class Morgue(Base):
                             self.god = "Gozag"
                         elif "Xom" in god:
                             self.god = "Xom"
-                        elif god != "":
+                        elif god != "" and "No God" not in god:
                             # weird morgues:
                             # morgue-NekoKawashu-20150527-130543.txt
                             if god[0] == "*":
-                                print("-> " + god)
                                 c = god.count("*")
                                 god = god[c:] + "  [{}]".format(c*"*")
-                                print(god)
                             found = re.search(faith_regex, god)
-                            self.god = found.groups()[0]
+                            try:
+                                self.god = found.groups()[0]
+                            except AttributeError:
+                                print(god)
                             self.faith = len(found.groups()[1])
 
                 if not self.SH:
