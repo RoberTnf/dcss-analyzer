@@ -6,6 +6,23 @@ from sqlalchemy.orm import relationship, backref
 from database import Base, db_session
 
 
+class StatRequest(Base):
+    """Holds each request done to /stats, with the number of time done,
+    to cache most requested
+    """
+
+    __tablename__ = "statrequests"
+    __searchable__ = ["request"]
+
+    id = Column(Integer, primary_key=True)
+    request = Column(String(400))
+    times = Column(Integer)
+
+    def __init__(self, request):
+        self.request = request
+        self.times = 0
+
+
 class Morgue(Base):
     """Main class of the  Holds most information about the run"""
 
@@ -69,7 +86,7 @@ class Morgue(Base):
         race_combo_regex = re.compile("Began as an* (.*) on")
         XL_regex = re.compile("AC.+?(\d+).+?Str.+?(\d+).+?XL.+?(\d+)")
         EV_regex = re.compile("EV.+?(\d+).+?Int.+?(\d+).+?God.+?(.*)")
-        faith_regex = re.compile("(\w+) \[(\**)")
+        faith_regex = re.compile("(\w+)\s+\[(\**)")
         SH_regex = re.compile("SH.+?(\d+).+?Dex.+?(\d+)")
         killer_regex = re.compile("by (.*?) \(")
         quit_regex = re.compile("Quit the game")
@@ -151,11 +168,19 @@ class Morgue(Base):
                     found = re.search(EV_regex, line)
                     if found:
                         self.EV, self.Int, god = found.groups()
+                        god = god.strip()
                         if "Gozag" in god:
                             self.god = "Gozag"
                         elif "Xom" in god:
                             self.god = "Xom"
-                        elif god.strip() != "":
+                        elif god != "":
+                            # weird morgues:
+                            # morgue-NekoKawashu-20150527-130543.txt
+                            if god[0] == "*":
+                                print("-> " + god)
+                                c = god.count("*")
+                                god = god[c:] + "  [{}]".format(c*"*")
+                                print(god)
                             found = re.search(faith_regex, god)
                             self.god = found.groups()[0]
                             self.faith = len(found.groups()[1])

@@ -6,5 +6,9 @@
 
 {% block header %}
     <h2>Welcome to DCSS Analyzer</h2>
-    <p>Search Here</p> <!-- TODO -->
+    <form action="/stats" method="get">
+        <input type="text" name="q" placeholder="Race, background, abbreviation..." />
+        <!-- We create a invisible submit button to be able to submit with enter -->
+        <input type="submit" style="display: none" />
+    </form>
 {% endblock %}

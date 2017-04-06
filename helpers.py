@@ -5,11 +5,11 @@ import os
 import sys
 import numpy as np
 from bs4 import BeautifulSoup
-from models import Morgue, BG_abbreviation, Race_abbreviation
+from models import Morgue, BG_abbreviation, Race_abbreviation, StatRequest
 from database import db_session, init_db
 from os import walk
 from os.path import join
-from flask import jsonify
+from flask import jsonify, json
 
 
 def download_morgues(base_url, base_folder="morgues", debug=False):
@@ -88,7 +88,29 @@ def search(q):
 
 
 def stats(**kwargs):
-    # TODO: add cached responses, update 24hours
+    keys = list(kwargs.keys())
+    keys.sort()
+    request = "?"
+    for key in keys:
+        request += "{}={}&".format(key, kwargs[key][0])
+
+    # if it has been searched
+    request = StatRequest.query.filter(StatRequest.request == request).first()
+    if request:
+        # if cached, just load it
+        if cached(request):
+            json_url = open(
+                os.path.join("cached", "{}.json".format(request), "r"))
+            json_data = json.load(json_url)
+            request.times += 1
+            db_session.commit()
+            return(json_data)
+
+    else:
+        StatRequest.insert.values(request=request)
+        db_session.commit()
+
+    update_cached(request)
     results = {}
     morgues = Morgue.query
     case = None
@@ -186,6 +208,14 @@ def stats(**kwargs):
         results["most_common_killer"] = most_common(killers)
 
     return jsonify(results)
+
+
+def update_cached(json):
+    pass
+
+
+def cached(request):
+    pass
 
 
 def most_common(lst):
