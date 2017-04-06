@@ -7,12 +7,9 @@ import numpy as np
 from bs4 import BeautifulSoup
 from models import Morgue, BG_abbreviation, Race_abbreviation, StatRequest
 from database import db_session, init_db
-from os import walk
-from os.path import join
+from os import walk, remove, listdir
+from os.path import join, isfile
 from flask import jsonify, json
-from sqlalchemy.sql.expression import func
-from operator import itemgetter
-from os.path import isfile
 
 N_TO_CACHE = 100
 
@@ -212,10 +209,7 @@ def stats(**kwargs):
                    (m.killer != "quit" and m.killer != "won")]
         results["most_common_killer"] = most_common(killers)
 
-
     update_cached(stat, results)
-
-    return jsonify(results)
 
 
 def update_cached(stat, results):
@@ -231,6 +225,11 @@ def update_cached(stat, results):
 
 def cached(stat):
     return isfile("cached/{}.json".format(stat.request))
+
+
+def rm_cached():
+    for file in listdir("cached"):
+        remove("cached/{}".format(file))
 
 
 def most_common(lst):
