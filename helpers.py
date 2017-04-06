@@ -186,7 +186,7 @@ def stats(**kwargs):
 
     results["mean_turns"] = np.array([m.turns for m in morgues.all()]).mean()
 
-    results["wins"] = morgues.filter(Morgue.success == 1).count()
+    results["wins"] = morgues.filter(Morgue.success is True).count()
     results["games"] = morgues.count()
     results["winrate"] = str(results["wins"] * 100 / results["games"]) + "%"
 
