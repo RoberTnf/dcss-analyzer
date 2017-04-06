@@ -258,7 +258,7 @@ class Morgue(Base):
                 if self.branch_order:
                     if branch in branch_order_list[-1]:
                         if int(floor) > int(branch_order_list[-1].split("-")[1]):
-                            branch_order_list[-1] = self.branch_order.split("-")[0] + "-" + floor.strip()
+                            branch_order_list[-1] = branch_order_list[-1].split("-")[0] + "-" + floor.strip()
                             self.branch_order = " ".join(branch_order_list) + " "
                     else:
                         self.branch_order += "{}{}-{} ".format(branch.strip(), floor.strip(), floor.strip())
