@@ -45,7 +45,7 @@ class Morgue(Base):
     god = Column(String(20))
     faith = Column(Integer)
     branch_order = Column(Text)
-    killer = Column(String(40))
+    killer = Column(String(80))
     filename = Column(String(200))
     date = Column(Date)
     runes = Column(Integer)
