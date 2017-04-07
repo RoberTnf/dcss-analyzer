@@ -14,11 +14,21 @@ db = SQLAlchemy(app)
 
 @app.route('/')
 def index():
-    return flask.render_template("test.html")
+    return flask.render_template("index.html")
 
 
 @app.route("/about")
 def about():
+    return flask.render_template("about.html")
+
+
+@app.route("/statistics")
+def statistics():
+    return apology("TODO")
+
+
+@app.route("/morgue_analyzer")
+def morgue_analyzer():
     return apology("TODO")
 
 

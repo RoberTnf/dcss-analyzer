@@ -5,11 +5,13 @@ import os
 import sys
 import numpy as np
 from bs4 import BeautifulSoup
-from models import Morgue, BG_abbreviation, Race_abbreviation
+from models import Morgue, BG_abbreviation, Race_abbreviation, StatRequest
 from database import db_session, init_db
-from os import walk
-from os.path import join
-from flask import jsonify
+from os import walk, remove, listdir
+from os.path import join, isfile
+from flask import jsonify, json
+
+N_TO_CACHE = 100
 
 
 def download_morgues(base_url, base_folder="morgues", debug=False):
@@ -68,7 +70,7 @@ def load_morgues_to_db(debug=False, n=0):
                 return
             if not Morgue.query.filter_by(filename=filename).first():
                 run = Morgue(join(dirpath, filename))
-                if run.crawl:
+                if run.crawl and run.time:
                     db_session.add(run)
                 i += 1
             elif debug:
@@ -88,7 +90,29 @@ def search(q):
 
 
 def stats(**kwargs):
-    # TODO: add cached responses, update 24hours
+    keys = list(kwargs.keys())
+    keys.sort()
+    request = "?"
+    for key in keys:
+        request += "{}={}&".format(key, kwargs[key][0])
+
+    # if it has been searched
+    stat = StatRequest.query.filter(StatRequest.request == request).first()
+    if stat:
+        # if cached, just load it
+        if cached(stat):
+            json_data = json.load(open("cached/{}.json".format(request)))
+            stat.times += 1
+            db_session.commit()
+            return jsonify(json_data)
+        else:
+            stat.times += 1
+            db_session.commit()
+    else:
+        stat = StatRequest(request=request)
+        db_session.add(stat)
+        db_session.commit()
+
     results = {}
     morgues = Morgue.query
     case = None
@@ -116,8 +140,8 @@ def stats(**kwargs):
             race_id = Race_abbreviation.query.filter(
                 Race_abbreviation.abbreviation == abv[:2]).first().id
             morgues = morgues.filter(
-                (Morgue.race_id == bg_id) &
-                (Morgue.background_id == race_id))
+                (Morgue.race_id == race_id) &
+                (Morgue.background_id == bg_id))
             case = "combo"
 
     # apply filters provided in kwargs
@@ -138,18 +162,23 @@ def stats(**kwargs):
         results["ERROR"] = "No results for your query"
         return jsonify(results)
 
-    # calculate statistics, mostly means, medians, and most common cases
+    # fill results with information about the runs
     if case == "bg":
-        # most common race
-        race_id = most_common([m.race_id for m in morgues.all()])
-        results["race"] = Race_abbreviation.query.filter(
-            Race_abbreviation.id == race_id).first().string
+        # makes a dictionary with every race with its number of appearences
+        races = {}
+        for race in Race_abbreviation.query.all():
+            races[Race_abbreviation.query.filter(
+                Race_abbreviation.id == race.id).first().string] =\
+                morgues.filter(Morgue.race_id == race.id).count()
+        results["races"] = races
 
     if case == "race":
-        # most common background
-        bg_id = most_common([m.background_id for m in morgues.all()])
-        results["bg"] = BG_abbreviation.query.filter(
-            BG_abbreviation.id == bg_id).first().string
+        bgs = {}
+        for bg in BG_abbreviation.query.all():
+            bgs[BG_abbreviation.query.filter(
+                BG_abbreviation.id == bg.id).first().string] =\
+                morgues.filter(Morgue.background_id == bg.id).count()
+        results["bgs"] = bgs
 
     # most common branch_order
     results["branch_order"] = get_medium_branch_order(
@@ -159,7 +188,7 @@ def stats(**kwargs):
 
     results["mean_turns"] = np.array([m.turns for m in morgues.all()]).mean()
 
-    results["wins"] = morgues.filter(Morgue.success == 1).count()
+    results["wins"] = morgues.filter(Morgue.success).count()
     results["games"] = morgues.count()
     results["winrate"] = str(results["wins"] * 100 / results["games"]) + "%"
 
@@ -172,20 +201,51 @@ def stats(**kwargs):
     results["mean_SH"] = np.array([m.SH for m in morgues.all()]).mean()
 
     if "name" not in kwargs:
-        results["most_common_player"] = most_common(
-            [m.name for m in morgues.all()])
+        players = {}
+        for player in morgues.distinct(Morgue.name).all():
+            players[player.name] = morgues.filter(Morgue.name == player.name).count()
+        results["players"] = players
 
     if "god" not in kwargs:
-        gods = [m.god for m in morgues.all() if m.god != "null"]
-        results["most_common_god"] = most_common(
-            gods)
+        gods = {}
+        for god in morgues.distinct(Morgue.god).all():
+            if god.god:
+                gods[god.god] = morgues.filter(Morgue.god == god.god).count()
+            else:
+                gods["none"] = morgues.filter(Morgue.god == None).count()
+        results["gods"] = gods
 
     if not kwargs.get("success"):
-        killers = [m.killer for m in morgues.all() if
-                   (m.killer != "quit" and m.killer != "won")]
-        results["most_common_killer"] = most_common(killers)
+        killers = {}
+        for killer in morgues.distinct(Morgue.killer).all():
+            if killer.killer:
+                killers[killer.killer] = morgues.filter(Morgue.killer == killer.killer).count()
+            else:
+                killers["none"] = morgues.filter(Morgue.killer == None).count()
+        results["killers"] = killers
+    update_cached(stat, results)
 
     return jsonify(results)
+
+
+def update_cached(stat, results):
+    """Checks if stat, (from StatRequest), needs to be cached"""
+    # get and sort stats
+    stats = StatRequest.query.all()
+    stats.sort(key=lambda x: x.times, reverse=True)
+
+    if stat in stats[:N_TO_CACHE]:
+        json.dump(results, open("cached/{}.json".format(stat.request), "w"))
+    return True
+
+
+def cached(stat):
+    return isfile("cached/{}.json".format(stat.request))
+
+
+def rm_cached():
+    for file in listdir("cached"):
+        remove("cached/{}".format(file))
 
 
 def most_common(lst):

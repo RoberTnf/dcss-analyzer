@@ -6,6 +6,23 @@ from sqlalchemy.orm import relationship, backref
 from database import Base, db_session
 
 
+class StatRequest(Base):
+    """Holds each request done to /stats, with the number of time done,
+    to cache most requested
+    """
+
+    __tablename__ = "statrequests"
+    __searchable__ = ["request"]
+
+    id = Column(Integer, primary_key=True)
+    request = Column(String(400))
+    times = Column(Integer)
+
+    def __init__(self, request):
+        self.request = request
+        self.times = 1
+
+
 class Morgue(Base):
     """Main class of the  Holds most information about the run"""
 
@@ -28,7 +45,7 @@ class Morgue(Base):
     god = Column(String(20))
     faith = Column(Integer)
     branch_order = Column(Text)
-    killer = Column(String(40))
+    killer = Column(String(80))
     filename = Column(String(200))
     date = Column(Date)
     runes = Column(Integer)
@@ -69,7 +86,7 @@ class Morgue(Base):
         race_combo_regex = re.compile("Began as an* (.*) on")
         XL_regex = re.compile("AC.+?(\d+).+?Str.+?(\d+).+?XL.+?(\d+)")
         EV_regex = re.compile("EV.+?(\d+).+?Int.+?(\d+).+?God.+?(.*)")
-        faith_regex = re.compile("(\w+) \[(\**)")
+        faith_regex = re.compile("(\w+)\s+\[(\**)")
         SH_regex = re.compile("SH.+?(\d+).+?Dex.+?(\d+)")
         killer_regex = re.compile("by (.*?) \(")
         quit_regex = re.compile("Quit the game")
@@ -151,14 +168,26 @@ class Morgue(Base):
                     found = re.search(EV_regex, line)
                     if found:
                         self.EV, self.Int, god = found.groups()
+                        god = god.strip()
                         if "Gozag" in god:
                             self.god = "Gozag"
                         elif "Xom" in god:
                             self.god = "Xom"
-                        elif god.strip() != "":
+                        elif god != "" and "No God" not in god:
+                            # weird morgues:
+                            # morgue-NekoKawashu-20150527-130543.txt
+                            if god[0] == "*":
+                                c = god.count("*")
+                                god = god[c:] + "  [{}]".format(c*"*")
                             found = re.search(faith_regex, god)
-                            self.god = found.groups()[0]
-                            self.faith = len(found.groups()[1])
+                            try:
+                                self.god = found.groups()[0]
+                                if self.god == "One":
+                                    self.god = "The Shining One"
+                                self.faith = len(found.groups()[1])
+                            except AttributeError:
+                                print("GodError: {}".format(god))
+                                self.god = god.split(" ")[0]
 
                 if not self.SH:
                     found = re.search(SH_regex, line)
@@ -172,6 +201,12 @@ class Morgue(Base):
                     found4 = re.search(suicide_regex, line)
                     if found:
                         self.killer = found.group(1)
+                        if "Lernaean" in self.killer:
+                            self.killer = "Lernaean hydra"
+                        elif "hydra" in self.killer:
+                            self.killer = "an hydra"
+                        elif "ghost" in self.killer:
+                            self.killer = "a ghost"
                     elif found2:
                         self.killer = found2.group(1)
                     elif re.search(quit_regex, line):
@@ -232,7 +267,7 @@ class Morgue(Base):
                 if self.branch_order:
                     if branch in branch_order_list[-1]:
                         if int(floor) > int(branch_order_list[-1].split("-")[1]):
-                            branch_order_list[-1] = self.branch_order.split("-")[0] + "-" + floor.strip()
+                            branch_order_list[-1] = branch_order_list[-1].split("-")[0] + "-" + floor.strip()
                             self.branch_order = " ".join(branch_order_list) + " "
                     else:
                         self.branch_order += "{}{}-{} ".format(branch.strip(), floor.strip(), floor.strip())
