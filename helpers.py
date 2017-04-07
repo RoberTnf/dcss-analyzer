@@ -162,18 +162,23 @@ def stats(**kwargs):
         results["ERROR"] = "No results for your query"
         return jsonify(results)
 
-    # calculate statistics, mostly means, medians, and most common cases
+    # fill results with information about the runs
     if case == "bg":
-        # most common race
-        race_id = most_common([m.race_id for m in morgues.all()])
-        results["race"] = Race_abbreviation.query.filter(
-            Race_abbreviation.id == race_id).first().string
+        # makes a dictionary with every race with its number of appearences
+        races = {}
+        for race in Race_abbreviation.query.all():
+            races[Race_abbreviation.query.filter(
+                Race_abbreviation.id == race.id).first().string] =\
+                morgues.filter(Morgue.race_id == race.id).count()
+        results["races"] = races
 
     if case == "race":
-        # most common background
-        bg_id = most_common([m.background_id for m in morgues.all()])
-        results["bg"] = BG_abbreviation.query.filter(
-            BG_abbreviation.id == bg_id).first().string
+        bgs = {}
+        for bg in BG_abbreviation.query.all():
+            bgs[BG_abbreviation.query.filter(
+                BG_abbreviation.id == bg.id).first().string] =\
+                morgues.filter(Morgue.background_id == bg.id).count()
+        results["bgs"] = bgs
 
     # most common branch_order
     results["branch_order"] = get_medium_branch_order(
@@ -196,18 +201,28 @@ def stats(**kwargs):
     results["mean_SH"] = np.array([m.SH for m in morgues.all()]).mean()
 
     if "name" not in kwargs:
-        results["most_common_player"] = most_common(
-            [m.name for m in morgues.all()])
+        players = {}
+        for player in morgues.distinct(Morgue.name).all():
+            players[player.name] = morgues.filter(Morgue.name == player.name).count()
+        results["players"] = players
 
     if "god" not in kwargs:
-        gods = [m.god for m in morgues.all() if m.god != "null"]
-        results["most_common_god"] = most_common(
-            gods)
+        gods = {}
+        for god in morgues.distinct(Morgue.god).all():
+            if god.god:
+                gods[god.god] = morgues.filter(Morgue.god == god.god).count()
+            else:
+                gods["none"] = morgues.filter(Morgue.god == None).count()
+        results["gods"] = gods
 
     if not kwargs.get("success"):
-        killers = [m.killer for m in morgues.all() if
-                   (m.killer != "quit" and m.killer != "won")]
-        results["most_common_killer"] = most_common(killers)
+        killers = {}
+        for killer in morgues.distinct(Morgue.killer).all():
+            if killer.killer:
+                killers[killer.killer] = morgues.filter(Morgue.killer == killer.killer).count()
+            else:
+                killers["none"] = morgues.filter(Morgue.killer == None).count()
+        results["killers"] = killers
     update_cached(stat, results)
 
     return jsonify(results)

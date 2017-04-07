@@ -182,6 +182,8 @@ class Morgue(Base):
                             found = re.search(faith_regex, god)
                             try:
                                 self.god = found.groups()[0]
+                                if self.god == "One":
+                                    self.god = "The Shining One"
                                 self.faith = len(found.groups()[1])
                             except AttributeError:
                                 print("GodError: {}".format(god))
@@ -199,6 +201,12 @@ class Morgue(Base):
                     found4 = re.search(suicide_regex, line)
                     if found:
                         self.killer = found.group(1)
+                        if "Lernaean" in self.killer:
+                            self.killer = "Lernaean hydra"
+                        elif "hydra" in self.killer:
+                            self.killer = "an hydra"
+                        elif "ghost" in self.killer:
+                            self.killer = "a ghost"
                     elif found2:
                         self.killer = found2.group(1)
                     elif re.search(quit_regex, line):
