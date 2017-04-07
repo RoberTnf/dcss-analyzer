@@ -81,12 +81,39 @@ def load_morgues_to_db(debug=False, n=0):
 
 def search(q):
     results = Race_abbreviation.query.filter(
-        Race_abbreviation.abbreviation.like(q + "%")
+        Race_abbreviation.abbreviation.ilike(q + "%")
         ).all()
     results += BG_abbreviation.query.filter(
-        BG_abbreviation.abbreviation.like(q + "%")
+        BG_abbreviation.abbreviation.ilike(q + "%")
         ).all()
-    return jsonify([result.as_dict() for result in results])
+    results += BG_abbreviation.query.filter(
+        BG_abbreviation.string.ilike(q + "%")
+        ).all()
+    results += Race_abbreviation.query.filter(
+        Race_abbreviation.string.ilike(q + "%")
+        ).all()
+    # eliminate duplicates and convert to list of dicts
+    results = [r.as_dict() for r in set(results)]
+
+    # check for combos
+    if len(q) >= 2 and len(q) <= 4:
+        race = Race_abbreviation.query.filter(
+            Race_abbreviation.abbreviation.ilike(q[:2])
+            ).first()
+
+        bg = BG_abbreviation.query.filter(
+            BG_abbreviation.abbreviation.ilike(q[2:] + "%")
+            ).all()
+
+        if race and bg:
+            for i in bg:
+                r = {
+                    "abbreviation": "{}{}"
+                    .format(race.abbreviation, i.abbreviation),
+                    "string": "{} {}".format(race.string, i.string)
+                }
+                results.append(r)
+    return jsonify(results)
 
 
 def stats(**kwargs):
