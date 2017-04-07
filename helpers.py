@@ -70,7 +70,7 @@ def load_morgues_to_db(debug=False, n=0):
                 return
             if not Morgue.query.filter_by(filename=filename).first():
                 run = Morgue(join(dirpath, filename))
-                if run.crawl:
+                if run.crawl and run.time:
                     db_session.add(run)
                 i += 1
             elif debug:
@@ -183,7 +183,7 @@ def stats(**kwargs):
 
     results["mean_turns"] = np.array([m.turns for m in morgues.all()]).mean()
 
-    results["wins"] = morgues.filter(Morgue.success is True).count()
+    results["wins"] = morgues.filter(Morgue.success == True).count()
     results["games"] = morgues.count()
     results["winrate"] = str(results["wins"] * 100 / results["games"]) + "%"
 
@@ -208,8 +208,9 @@ def stats(**kwargs):
         killers = [m.killer for m in morgues.all() if
                    (m.killer != "quit" and m.killer != "won")]
         results["most_common_killer"] = most_common(killers)
-
     update_cached(stat, results)
+
+    return jsonify(results)
 
 
 def update_cached(stat, results):

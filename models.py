@@ -182,9 +182,10 @@ class Morgue(Base):
                             found = re.search(faith_regex, god)
                             try:
                                 self.god = found.groups()[0]
+                                self.faith = len(found.groups()[1])
                             except AttributeError:
-                                print(god)
-                            self.faith = len(found.groups()[1])
+                                print("GodError: {}".format(god))
+                                self.god = god.split(" ")[0]
 
                 if not self.SH:
                     found = re.search(SH_regex, line)
