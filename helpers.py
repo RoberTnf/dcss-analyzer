@@ -140,8 +140,8 @@ def stats(**kwargs):
             race_id = Race_abbreviation.query.filter(
                 Race_abbreviation.abbreviation == abv[:2]).first().id
             morgues = morgues.filter(
-                (Morgue.race_id == bg_id) &
-                (Morgue.background_id == race_id))
+                (Morgue.race_id == race_id) &
+                (Morgue.background_id == bg_id))
             case = "combo"
 
     # apply filters provided in kwargs
@@ -183,7 +183,7 @@ def stats(**kwargs):
 
     results["mean_turns"] = np.array([m.turns for m in morgues.all()]).mean()
 
-    results["wins"] = morgues.filter(Morgue.success == True).count()
+    results["wins"] = morgues.filter(Morgue.success).count()
     results["games"] = morgues.count()
     results["winrate"] = str(results["wins"] * 100 / results["games"]) + "%"
 
