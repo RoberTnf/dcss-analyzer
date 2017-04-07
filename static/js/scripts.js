@@ -23,10 +23,17 @@ function configure()
     });
 
     $("#search .typeahead").on("typeahead:selected", function(eventObject, suggestion, name) {
+        // get results
         var parameters = {
             q: suggestion.abbreviation
-        };
-        window.location.replace(Flask.url_for("stats").concat("?abbreviation=").concat(suggestion.abbreviation))
+        }
+        $.getJSON(Flask.url_for("search"), parameters)
+        .done(function(data, textStatus, jqXHR) {
+            $("#search").css("visibility", "hidden")
+        })
+        .fail(function(jqXHR, textStatus, errorThrown) {
+            console.log(errorThrown.toString());
+        });
     });
 }
 
