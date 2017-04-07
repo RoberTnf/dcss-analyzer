@@ -6,7 +6,8 @@ $(function(){
 function configure()
 {
     // configure typeahead
-    $("#q").typeahead({
+    $("#search .typeahead").typeahead({
+        hint: true,
         highlight: false,
         minLength: 1
     },
@@ -21,11 +22,10 @@ function configure()
         }
     });
 
-    $("#q").on("typeahead:selected", function(eventObject, suggestion, name) {
+    $("#search .typeahead").on("typeahead:selected", function(eventObject, suggestion, name) {
         var parameters = {
             q: suggestion.abbreviation
         };
-        console.log("replace");
         window.location.replace(Flask.url_for("stats").concat("?abbreviation=").concat(suggestion.abbreviation))
     });
 }
