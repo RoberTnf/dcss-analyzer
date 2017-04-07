@@ -86,7 +86,7 @@ class Morgue(Base):
         race_combo_regex = re.compile("Began as an* (.*) on")
         XL_regex = re.compile("AC.+?(\d+).+?Str.+?(\d+).+?XL.+?(\d+)")
         EV_regex = re.compile("EV.+?(\d+).+?Int.+?(\d+).+?God.+?(.*)")
-        faith_regex = re.compile("(\w+)\s+\[(\**)")
+        faith_regex = re.compile("(.+?)\s+\[(\**)")
         SH_regex = re.compile("SH.+?(\d+).+?Dex.+?(\d+)")
         killer_regex = re.compile("by (.*?) \(")
         quit_regex = re.compile("Quit the game")
@@ -182,8 +182,6 @@ class Morgue(Base):
                             found = re.search(faith_regex, god)
                             try:
                                 self.god = found.groups()[0]
-                                if self.god == "One":
-                                    self.god = "The Shining One"
                                 self.faith = len(found.groups()[1])
                             except AttributeError:
                                 print("GodError: {}".format(god))
@@ -276,8 +274,8 @@ class Morgue(Base):
 
 
 # %% test regex
-# regex = re.compile("lasted (\d*).*?(\d\d:\d\d:\d\d) \((\d+)")
-# string = "             The game lasted 00:02:17 (1841 turns)."
+# regex = re.compile("(.+?)\s+\[(\**)")
+# string = "  Sif Muna [******]"
 # print(re.search(regex, string).groups())
 # %%
 

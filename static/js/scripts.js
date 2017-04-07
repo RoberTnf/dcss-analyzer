@@ -26,7 +26,7 @@ function configure()
             q: suggestion.abbreviation
         };
         console.log("replace");
-        window.location.replace(Flask.url_for("stats").concat("?q=").concat(suggestion.abbreviation))
+        window.location.replace(Flask.url_for("stats").concat("?abbreviation=").concat(suggestion.abbreviation))
     });
 }
 
