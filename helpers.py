@@ -64,6 +64,9 @@ def load_morgues_to_db(debug=False, n=0):
         print("loading morgues")
     for dirpath, dirnames, filenames in walk("morgues"):
         for filename in [f for f in filenames if f.endswith(".txt")]:
+            if i % 1000 == 0 and i != 0:
+                print("{} morgues loaded".format(i))
+                db_session.commit()
             if i >= n and n > 0:
                 print("{} morgues loaded".format(i))
                 db_session.commit()
@@ -233,9 +236,7 @@ def stats(**kwargs):
 
     results["mean_turns"] = np.array([m.turns for m in morgues.all()]).mean()
 
-    results["wins"] = morgues.filter(Morgue.success).count()
     results["games"] = morgues.count()
-    results["winrate"] = str(results["wins"] * 100 / results["games"]) + "%"
 
     results["mean_XL"] = np.array([m.XL for m in morgues.all()]).mean()
     results["mean_Str"] = np.array([m.Str for m in morgues.all()]).mean()
@@ -252,21 +253,41 @@ def stats(**kwargs):
         results["players"] = players
 
     if "god" not in kwargs:
-        gods = {}
+        gods_ = {}
+        total = 0
+        gods = {"other": 0}
         for god in morgues.distinct(Morgue.god).all():
             if god.god:
                 gods[god.god] = morgues.filter(Morgue.god == god.god).count()
+                total += gods[god.god]
             else:
                 gods["none"] = morgues.filter(Morgue.god == None).count()
+                total += gods["none"]
+        for k in gods_.keys():
+            if gods_[k]/total > 0.03:
+                gods[k] = gods[k]
+            else:
+                gods["other"] += gods[k]
         results["gods"] = gods
 
-    if not kwargs.get("success"):
-        killers = {}
+    if "success" not in kwargs:
+            results["wins"] = morgues.filter(Morgue.success).count()
+            results["winrate"] = str(round(results["wins"] * 100 / results["games"],
+                4)) + "%"
+
+    if not kwargs.get("success") == 0:
+        killers = {"other": 0}
+        killers_ = {}
+        total = 0
         for killer in morgues.distinct(Morgue.killer).all():
-            if killer.killer:
-                killers[killer.killer] = morgues.filter(Morgue.killer == killer.killer).count()
+            if killer.killer and killer.killer != "won":
+                killers_[killer.killer] = morgues.filter(Morgue.killer == killer.killer).count()
+                total += killers_[killer.killer]
+        for k in killers_.keys():
+            if killers_[k]/total > 0.01 or k[0].isupper():
+                killers[k] = killers_[k]
             else:
-                killers["none"] = morgues.filter(Morgue.killer == None).count()
+                killers["other"] += killers_[k]
         results["killers"] = killers
     update_cached(stat, results)
 

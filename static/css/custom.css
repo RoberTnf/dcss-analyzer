@@ -86,3 +86,45 @@
 #filter_list ul{
     list-style-type: none;
 }
+
+#statStr {
+    padding-bottom: 15px;
+}
+
+#main-wrapper .sectionTitle{
+    padding-top: 15px;
+}
+
+#main-wrapper .graph-container{
+    width:40%;
+    height:400px;
+    display: inline-block;
+    vertical-align:middle;
+}
+
+#main-wrapper .graph {
+    width:40%px;
+    height:380px;
+}
+
+#main-wrapper .graph-memo {
+    text-align:center;
+    width:250px;
+    height:20px;
+    text-align:center;
+    margin:0 auto;
+}
+
+#main-wrapper .sectionText{
+    display: inline-block;
+    vertical-align:middle;
+    color: #000;
+}
+
+#loader-gif {
+    padding-top: 10px;
+    height:50px;
+    width:50px;
+    margin:auto;
+    display:none;
+}
