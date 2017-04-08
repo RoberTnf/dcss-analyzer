@@ -27,7 +27,7 @@ class Morgue(Base):
     """Main class of the  Holds most information about the run"""
 
     __tablename__ = "morgues"
-    __searchable__ = ["filename", "name", "success", "version", "god", "runes"]
+    __searchable__ = ["filename", "name", "success", "version", "god", "runes", "killer"]
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     version = Column(String(30))
