@@ -155,6 +155,10 @@ function display_stats(data, statStr){
                         opacity: 0.8,
                         color: '#000'
                     }
+                },
+                combine: {
+                    threshold: 0.01,
+                    label: "Other"
                 }
             }
         },
@@ -278,21 +282,22 @@ function display_stats(data, statStr){
         $("#uniqueKillers").append("<div class=sectionText></div>")
         var Points = [];
         var j = 0;
-        var max = {"god":"none", "count":0};
+        var max = {"killer":"none", "count":0};
         var total = 0;
+        var total_uniques = 0;
         $.each(data.killers, function(i, item){
             // if first char is uppercase
             if (i.slice(0,1).isUpperCase()){
                 Points.push({data: item, label: i});
                 if (max.count < item && i != "other" && i != "quit") {
                     max.count=item
-                    max.god=i
+                    max.killer=i
                 };
             }
             total += item;
         });
-        uniqueKillersStr = "The monster with most kills is <b>{0}</b> with {1} kills (<b>{2}%</b>)".f(
-            max.god, max.count, (max.count*100/total).toString().slice(0,5)
+        uniqueKillersStr = "The monster with most kills is <b>{0}</b> with {1} kills (<b>{2}%</b> of totals)".f(
+            max.killer, max.count, (max.count*100/total).toString().slice(0,5)
         )
         $("#uniqueKillers .sectionText").append(uniqueKillersStr)
         $("#uniqueKillers").append('<div class="graph-container"></div>');

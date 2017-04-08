@@ -231,13 +231,9 @@ def stats(**kwargs):
     # most common branch_order
     results["branch_order"] = get_medium_branch_order(
         [morgue.branch_order for morgue in morgues.all()])
-
     results["mean_time"] = np.array([m.time for m in morgues.all()]).mean()
-
     results["mean_turns"] = np.array([m.turns for m in morgues.all()]).mean()
-
     results["games"] = morgues.count()
-
     results["mean_XL"] = np.array([m.XL for m in morgues.all()]).mean()
     results["mean_Str"] = np.array([m.Str for m in morgues.all()]).mean()
     results["mean_AC"] = np.array([m.AC for m in morgues.all()]).mean()
@@ -253,21 +249,12 @@ def stats(**kwargs):
         results["players"] = players
 
     if "god" not in kwargs:
-        gods_ = {}
-        total = 0
-        gods = {"other": 0}
+        gods = {}
         for god in morgues.distinct(Morgue.god).all():
             if god.god:
                 gods[god.god] = morgues.filter(Morgue.god == god.god).count()
-                total += gods[god.god]
             else:
                 gods["none"] = morgues.filter(Morgue.god == None).count()
-                total += gods["none"]
-        for k in gods_.keys():
-            if gods_[k]/total > 0.03:
-                gods[k] = gods[k]
-            else:
-                gods["other"] += gods[k]
         results["gods"] = gods
 
     if "success" not in kwargs:
@@ -276,18 +263,10 @@ def stats(**kwargs):
                 4)) + "%"
 
     if not kwargs.get("success") == 0:
-        killers = {"other": 0}
-        killers_ = {}
-        total = 0
+        killers = {}
         for killer in morgues.distinct(Morgue.killer).all():
             if killer.killer and killer.killer != "won":
-                killers_[killer.killer] = morgues.filter(Morgue.killer == killer.killer).count()
-                total += killers_[killer.killer]
-        for k in killers_.keys():
-            if killers_[k]/total > 0.01 or k[0].isupper():
-                killers[k] = killers_[k]
-            else:
-                killers["other"] += killers_[k]
+                killers[killer.killer] = morgues.filter(Morgue.killer == killer.killer).count()
         results["killers"] = killers
     update_cached(stat, results)
 
