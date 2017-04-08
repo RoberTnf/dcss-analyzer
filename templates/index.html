@@ -7,41 +7,42 @@
 {% block header %}
     <div id=search>
         <h2>Welcome to DCSS Analyzer</h2>
-        <input type="text" class="typeahead" placeholder="Race, background, abbreviation..." />
-        <div id="filterList">
-            <h2>
-                Filters:
-            </h2>
-                <form id="filter_elements" name="filter_elements">
-                    <div id="firstRowFilters">
-                        <div id="filterVictory">
-                            <div class="filterText">Victory:</div>
-                            <select id="selectVictory">
-                                <option>No Filter</option>
-                                <option>Victories</option>
-                                <option>Defeats</option>
-                            </select>
-                        </div>
-                        <div id="filterRunes">
-                            <div class="filterText">Number of runes:</div>
-                            <input type=text id="selectRunes" name="selectRunes" placeholder="No filter">
-                        </div>
-                        <div id="filterVersion">
-                            <div class="filterText">Version:</div>
-                            <input type=text id="selectVersion" placeholder="No filter">
-                        </div>
-                    </div>
-                    <div id="secondRowFilters">
-                        <div id="filterGod">
-                            <div class="filterText">God:</div>
-                            <input type=text id="selectGod" placeholder="No filter">
-                        </div>
-                        <div id="filterName">
-                            <div class="filterText">Player name:</div>
-                            <input type=text id="selectName" placeholder="No filter">
-                        </div>
-                    </div>
-                </form>
-        </div>
+        <input type="text" class="typeahead" id="selectAbbreviation" placeholder="Race, background, abbreviation..." />
     </div>
+    <div id="filterList">
+        <h2>
+            Filters:
+        </h2>
+            <form id="filter_elements" name="filter_elements">
+                <div id="firstRowFilters">
+                    <div id="filterVictory">
+                        <div class="filterText">Victory:</div>
+                        <select id="selectVictory">
+                            <option>No Filter</option>
+                            <option>Victories</option>
+                            <option>Defeats</option>
+                        </select>
+                    </div>
+                    <div id="filterRunes">
+                        <div class="filterText">Number of runes:</div>
+                        <input type=text class="typeahead" id="selectRunes" name="selectRunes" placeholder="No filter">
+                    </div>
+                    <div id="filterVersion">
+                        <div class="filterText">Version:</div>
+                        <input type=text class="typeahead" id="selectVersion" name="selectVersion" placeholder="No filter">
+                    </div>
+                </div>
+                <div id="secondRowFilters">
+                    <div id="filterGod">
+                        <div class="filterText">God:</div>
+                        <input type=text class="typeahead" id="selectGod" placeholder="No filter">
+                    </div>
+                    <div id="filterName">
+                        <div class="filterText">Player name:</div>
+                        <input type=text class="typeahead" id="selectPlayer" placeholder="No filter">
+                    </div>
+                </div>
+            </form>
+    </div>
+
 {% endblock %}

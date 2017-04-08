@@ -116,6 +116,24 @@ def search(q):
     return jsonify(results)
 
 
+def searchGods(q):
+    results = Morgue.query.filter(
+        Morgue.god.ilike(q + "%")
+        ).distinct(Morgue.god).all()
+    # eliminate duplicates and convert to list of dicts
+    results = [{"suggestion": r.god} for r in set(results)]
+
+    return jsonify(results)
+
+def searchPlayers(q):
+    results = Morgue.query.filter(
+        Morgue.name.ilike(q + "%")
+        ).distinct(Morgue.name).all()
+    # eliminate duplicates and convert to list of dicts
+    results = [{"suggestion": r.name} for r in set(results)]
+
+    return jsonify(results)
+
 def stats(**kwargs):
     keys = list(kwargs.keys())
     keys.sort()
@@ -183,7 +201,7 @@ def stats(**kwargs):
     if "version" in kwargs:
         # version = 0.15.4645 -> 0.15
         version = kwargs["version"][0][:4] + "%"
-        morgues = morgues.filter(Morgue.version.like(version))
+        morgues = morgues.filter(Morgue.version.ilike(version))
 
     if not morgues.first():
         results["ERROR"] = "No results for your query"

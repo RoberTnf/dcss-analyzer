@@ -1,18 +1,3 @@
-#filterVictory {display:inline-block;margin-right:10px; width:200px;}
-#filterGod {display:inline-block; width:300px;margin-right:20px;}
-#filterName {display:inline-block; width:300px;}
-#filterVersion{display:inline-block; width:200px}
-#filterRunes{display:inline-block; width:200px; margin-right:10px}
-#firstRowFilters{padding-bottom: 10px}
-
-#filterList h2{
-    padding-top: 20px
-}
-
-#filter_list ul{
-    list-style-type: none;
-}
-
 .filterText {
     font-size: 22px;
     color: #fff;
@@ -73,4 +58,31 @@
 
 .tt-suggestion p {
     margin: 0;
+}
+
+#filterVictory {display:inline-block;margin-right:10px; width:200px;}
+#filterGod {display:inline-block; width:200px;margin-right:20px;}
+#filterName {display:inline-block; width:200px;}
+#filterVersion{display:inline-block; width:200px}
+#filterRunes{display:inline-block; width:200px; margin-right:10px}
+#firstRowFilters{padding-bottom: 10px}
+
+#filter_elements .typeahead
+{
+    /* override typeahead.js's transparent background */
+    background-color: #ffffff !important;
+    border-radius: 8px;
+    /* text box's width */
+    width: 200px;
+}
+
+#filter_elements .tt-menu {
+    width: 200px;
+}
+#filterList h2{
+    padding-top: 20px
+}
+
+#filter_list ul{
+    list-style-type: none;
 }
