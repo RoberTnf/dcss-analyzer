@@ -6,7 +6,8 @@ $(function(){
 function configure()
 {
     // configure typeahead
-    $("#q").typeahead({
+    $("#search .typeahead").typeahead({
+        hint: true,
         highlight: false,
         minLength: 1
     },
@@ -21,12 +22,18 @@ function configure()
         }
     });
 
-    $("#q").on("typeahead:selected", function(eventObject, suggestion, name) {
+    $("#search .typeahead").on("typeahead:selected", function(eventObject, suggestion, name) {
+        // get results
         var parameters = {
             q: suggestion.abbreviation
-        };
-        console.log("replace");
-        window.location.replace(Flask.url_for("stats").concat("?q=").concat(suggestion.abbreviation))
+        }
+        $.getJSON(Flask.url_for("search"), parameters)
+        .done(function(data, textStatus, jqXHR) {
+            $("#search").css("visibility", "hidden")
+        })
+        .fail(function(jqXHR, textStatus, errorThrown) {
+            console.log(errorThrown.toString());
+        });
     });
 }
 

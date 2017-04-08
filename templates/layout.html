@@ -11,6 +11,7 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<!--[if lte IE 8]><script src="static/js/ie/html5shiv.js"></script><![endif]-->
 		<link rel="stylesheet" href="static/css/main.css" />
+        <link rel="stylesheet" href="static/css/custom.css"/ />
 		<!--[if lte IE 8]><link rel="stylesheet" href="static/css/ie8.css" /><![endif]-->
 	</head>
 	<body class="homepage">
@@ -49,13 +50,17 @@
 		</div>
 
 		<!-- Scripts -->
-			<script src="static/js/jquery.min.js"></script>
+			<script src="static/js/jquery-3.2.0.js"></script>
 			<script src="static/js/jquery.dropotron.min.js"></script>
 			<script src="static/js/skel.min.js"></script>
 			<script src="static/js/skel-viewport.min.js"></script>
 			<script src="static/js/util.js"></script>
 			<!--[if lte IE 8]><script src="static/js/ie/respond.min.js"></script><![endif]-->
 			<script src="static/js/main.js"></script>
-
+            <script src="static/js/scripts.js"></script>
+            <script src="static/js/handlebars-v4.0.5.js"></script>
+            <script src="static/js/typeahead.js"></script>
+            <script src="static/js/jquery.canvasjs.min.js"></script>
+            {{ JSGlue.include() }}
 	</body>
 </html>

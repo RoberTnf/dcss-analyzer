@@ -5,10 +5,15 @@
 {% endblock %}
 
 {% block header %}
-    <h2>Welcome to DCSS Analyzer</h2>
-    <form action="/stats" method="get">
-        <input type="text" name="q" placeholder="Race, background, abbreviation..." />
-        <!-- We create a invisible submit button to be able to submit with enter -->
-        <input type="submit" style="display: none" />
-    </form>
+    <div id="search">
+        <h2>Welcome to DCSS Analyzer</h2>
+        <form method="get">
+            <input type="text" class="typeahead" placeholder="Race, background, abbreviation..." />
+        </form>
+    </div>
+
+    <div id="graph">
+
+    </div>
+
 {% endblock %}
