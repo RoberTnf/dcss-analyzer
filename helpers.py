@@ -10,6 +10,11 @@ from database import db_session, init_db
 from os import walk, remove, listdir
 from os.path import join, isfile
 from flask import jsonify, json
+from sqlalchemy.sql import func
+from time import time
+
+debug = True
+
 
 N_TO_CACHE = 100
 
@@ -56,17 +61,21 @@ def download_morgues(base_url, base_folder="morgues", debug=False):
                     print("{} already exists".format(directory + morgue))
 
 
-def load_morgues_to_db(debug=False, n=0):
+def load_morgues_to_db(n=0):
     """Loads all the morgues present in directory "morgues" to DB"""
     init_db()
     i = 0
     if debug:
         print("loading morgues")
+        t = time()
     for dirpath, dirnames, filenames in walk("morgues"):
         for filename in [f for f in filenames if f.endswith(".txt")]:
-            if i % 1000 == 0 and i != 0:
-                print("{} morgues loaded".format(i))
+            if i % 1000 == 0 and i != 0 and debug:
                 db_session.commit()
+                if debug:
+                    print("{} s to load 1000 morgues, total {} morgues".format(
+                    time() - t, i))
+                    t=time()
             if i >= n and n > 0:
                 print("{} morgues loaded".format(i))
                 db_session.commit()
@@ -76,8 +85,6 @@ def load_morgues_to_db(debug=False, n=0):
                 if run.crawl and run.time:
                     db_session.add(run)
                 i += 1
-            elif debug:
-                print("Morgue already in db")
     print("{} morgues loaded".format(i))
     db_session.commit()
 
@@ -116,6 +123,7 @@ def search(q):
                     "string": "{} {}".format(race.string, i.string)
                 }
                 results.append(r)
+
     return jsonify(results)
 
 
@@ -164,6 +172,8 @@ def stats(**kwargs):
     results = {}
     morgues = Morgue.query
     case = None
+
+    t = time()
     if "abbreviation" in kwargs:
         abv = kwargs["abbreviation"][0]
         # check if q is an abbreviation
@@ -228,48 +238,60 @@ def stats(**kwargs):
                 morgues.filter(Morgue.background_id == bg.id).count()
         results["bgs"] = bgs
 
+    if debug:
+        print("{} s to filter.".format(time() - t))
+        t = time()
+
+
     # most common branch_order
+    if debug:
+        t = time()
+        t_tot = time()
+
     results["branch_order"] = get_medium_branch_order(
         [morgue.branch_order for morgue in morgues.all()])
-    results["mean_time"] = np.array([m.time for m in morgues.all()]).mean()
-    results["mean_turns"] = np.array([m.turns for m in morgues.all()]).mean()
+    results["mean_time"] = float(morgues.session.query(func.avg(Morgue.time)).first()[0])
+    results["mean_turns"] = float(morgues.session.query(func.avg(Morgue.turns)).first()[0])
+    results["wins"] = morgues.filter(Morgue.success).count()
     results["games"] = morgues.count()
-    results["mean_XL"] = np.array([m.XL for m in morgues.all()]).mean()
-    results["mean_Str"] = np.array([m.Str for m in morgues.all()]).mean()
-    results["mean_AC"] = np.array([m.AC for m in morgues.all()]).mean()
-    results["mean_Int"] = np.array([m.Int for m in morgues.all()]).mean()
-    results["mean_EV"] = np.array([m.EV for m in morgues.all()]).mean()
-    results["mean_Dex"] = np.array([m.Dex for m in morgues.all()]).mean()
-    results["mean_SH"] = np.array([m.SH for m in morgues.all()]).mean()
+    results["winrate"] = str(results["wins"] * 100 / results["games"]) + "%"
+    results["mean_XL"] = float(morgues.session.query(func.avg(Morgue.XL)).first()[0])
+    results["mean_Str"] = float(morgues.session.query(func.avg(Morgue.time)).first()[0])
+    results["mean_AC"] = float(morgues.session.query(func.avg(Morgue.time)).first()[0])
+    results["mean_Int"] = float(morgues.session.query(func.avg(Morgue.time)).first()[0])
+    results["mean_EV"] = float(morgues.session.query(func.avg(Morgue.time)).first()[0])
+    results["mean_Dex"] = float(morgues.session.query(func.avg(Morgue.time)).first()[0])
+    results["mean_SH"] = float(morgues.session.query(func.avg(Morgue.time)).first()[0])
+
+    if debug:
+        print("{} s to calculate means.".format(time() - t))
+        t = time()
+        t2=time()
 
     if "name" not in kwargs:
-        players = {}
-        for player in morgues.distinct(Morgue.name).all():
-            players[player.name] = morgues.filter(Morgue.name == player.name).count()
-        results["players"] = players
+        results["players"] = morgues.session.query(Morgue.name, func.count(Morgue.name)).group_by(Morgue.name).all()
+
+    if debug:
+        print("{} s to calculate name list.".format(time() - t2))
+        t2=time()
 
     if "god" not in kwargs:
         gods = {}
-        for god in morgues.distinct(Morgue.god).all():
-            if god.god:
-                gods[god.god] = morgues.filter(Morgue.god == god.god).count()
-            else:
-                gods["none"] = morgues.filter(Morgue.god == None).count()
-        results["gods"] = gods
+        results["gods"] = morgues.session.query(Morgue.god, func.count(Morgue.god)).group_by(Morgue.god).all()
 
-    if "success" not in kwargs:
-            results["wins"] = morgues.filter(Morgue.success).count()
-            results["winrate"] = str(round(results["wins"] * 100 / results["games"],
-                4)) + "%"
+    if debug:
+        print("{} s to calculate god list.".format(time() - t2))
+        t2=time()
 
-    if not kwargs.get("success") == 0:
-        killers = {}
-        for killer in morgues.distinct(Morgue.killer).all():
-            if killer.killer and killer.killer != "won":
-                killers[killer.killer] = morgues.filter(Morgue.killer == killer.killer).count()
-        results["killers"] = killers
+    if not kwargs.get("success"):
+        results["killers"] = morgues.session.query(Morgue.killer, func.count(Morgue.killer)).group_by(Morgue.killer).all()
+
+    if debug:
+        print("{} s to calculate killer list.".format(time() - t2))
+        print("{} s to obtain name, god and killer lists.".format(time() - t))
+        print("{} s in total.".format(time() - t_tot))
+
     update_cached(stat, results)
-
     return jsonify(results)
 
 

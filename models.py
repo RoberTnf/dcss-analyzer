@@ -5,7 +5,7 @@ from sqlalchemy import ForeignKey, Text, Date, Float
 from sqlalchemy.orm import relationship, backref
 from database import Base, db_session
 
-
+debug = True
 class StatRequest(Base):
     """Holds each request done to /stats, with the number of time done,
     to cache most requested
@@ -27,7 +27,7 @@ class Morgue(Base):
     """Main class of the  Holds most information about the run"""
 
     __tablename__ = "morgues"
-    __searchable__ = ["filename", "name", "success", "version", "god", "runes"]
+    __searchable__ = ["filename", "name", "success", "version", "god", "runes", "killer"]
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     version = Column(String(30))
@@ -88,21 +88,23 @@ class Morgue(Base):
         EV_regex = re.compile("EV.+?(\d+).+?Int.+?(\d+).+?God.+?(.*)")
         faith_regex = re.compile("(.+?)\s+\[(\**)")
         SH_regex = re.compile("SH.+?(\d+).+?Dex.+?(\d+)")
-        killer_regex = re.compile("by (.*?) \(")
+        killer_regex = re.compile("by (.*?) \(|by (.*?)$")
         quit_regex = re.compile("Quit the game")
-        anih_regex = re.compile("\w+ by (.+?)\n")
         pois_regex = re.compile("Succumbed to (.*?)\n")
         suicide_regex = re.compile("Killed themself")
+        starved_regex = re.compile("Starved")
         branch_regex = re.compile("\d+\s+\|\s+(.+?)\s+\|")
         date_regex = re.compile(".*?-(\d\d\d\d)(\d\d)(\d\d)-")
         skill_regex = re.compile("...Level (\d+\.?\d?).*? (.+)\n")
         rune_regex = re.compile("(\d+)/15 runes:")
         spell_regex = re.compile("\w - (.*?)  \s*.+?#|\w - (.*?)  \s*.+?N/A")
+        got_out_regex = re.compile("out of the dungeon.")
+        afar_regex = re.compile("Killed from afar by (.+?) \(")
 
         with open(filename) as f:
             d = [int(i) for i in re.search(date_regex, filename).groups()]
             self.date = date(*d)
-
+            self.name = re.search(re.compile("morgue-(.*?)-"), filename).group(1)
             for line in f.readlines():
                 if not self.version:
                     found = re.search(version_regex, line)
@@ -111,17 +113,6 @@ class Morgue(Base):
                         if "Sprint" in line:
                             self.crawl = False
                             break
-
-                if not self.name:
-                    found = re.search(killer_regex, line)
-                    found2 = re.search(anih_regex, line)
-                    found3 = re.search(pois_regex, line)
-                    found4 = re.search(suicide_regex, line)
-                    if found:
-                        self.killer = found.group(1)
-                    found = re.search(name_regex, line)
-                    if found:
-                        self.name = found.group(2)
 
                 if not self.time:
                     found = re.search(time_regex, line)
@@ -144,7 +135,6 @@ class Morgue(Base):
                 if not self.race:
                     found = re.search(race_combo_regex, line)
                     if found:
-                        # TODO: Get this shit finding shit
                         race_string, background_string =\
                             race_background(found.group(1))
                         self.race = Race_abbreviation.query.filter_by(
@@ -152,12 +142,14 @@ class Morgue(Base):
                         if not self.race:
                             self.race = Race_abbreviation(race_string)
                             db_session.add(self.race)
+                            db_session.commit()
                         self.background = BG_abbreviation.query\
                             .filter_by(string=background_string).first()
                         if not self.background:
                             self.background = BG_abbreviation(
                                 background_string)
                             db_session.add(self.background)
+                            db_session.commit()
 
                 if not self.XL:
                     found = re.search(XL_regex, line)
@@ -194,11 +186,15 @@ class Morgue(Base):
 
                 if not self.killer:
                     found = re.search(killer_regex, line)
-                    found2 = re.search(anih_regex, line)
+                    found2 = re.search(starved_regex, line)
                     found3 = re.search(pois_regex, line)
                     found4 = re.search(suicide_regex, line)
+                    found5 = re.search(got_out_regex, line)
                     if found:
-                        self.killer = found.group(1)
+                        if found.group(1):
+                            self.killer = found.group(1)
+                        else:
+                            self.killer = found.group(2)
                         if "Lernaean" in self.killer:
                             self.killer = "Lernaean hydra"
                         elif "hydra" in self.killer:
@@ -206,7 +202,11 @@ class Morgue(Base):
                         elif "ghost" in self.killer:
                             self.killer = "a ghost"
                     elif found2:
-                        self.killer = found2.group(1)
+                        self.killer = "starved"
+                    elif re.search(re.compile("Rotted away (\(.*?\))"), line):
+                        self.killer = re.search(re.compile("Rotted away (\(.*?\))"), line).group(0)
+                    elif re.search(re.compile("Asphyxiated"), line):
+                        self.killer = "Asphyxiated"
                     elif re.search(quit_regex, line):
                         self.killer = "quit"
                     elif self.success:
@@ -215,6 +215,8 @@ class Morgue(Base):
                         self.killer = found3.group(1)
                     elif found4:
                         self.killer = "suicide"
+                    elif found5:
+                        self.killer = "got out of the dungeon"
 
                 found = re.search(branch_regex, line)
                 if found:
@@ -236,6 +238,7 @@ class Morgue(Base):
                     skill = Skill(self, found.group(2), found.group(1))
                     db_session.add(skill)
 
+
                 # check for spells
                 found = re.match(spell_regex, line)
                 if found:
@@ -244,6 +247,14 @@ class Morgue(Base):
                     else:
                         spell = Spell(self, found.group(2))
                     db_session.add(spell)
+
+        if not self.god:
+            self.god = "none"
+        if not self.killer and self.crawl:
+            self.killer = "Error parsing"
+            if debug:
+                print(self.filename)
+
 
     def as_dict(self):
         return {c.name: getattr(self, c.name)
@@ -274,8 +285,8 @@ class Morgue(Base):
 
 
 # %% test regex
-# regex = re.compile("(.+?)\s+\[(\**)")
-# string = "  Sif Muna [******]"
+# regex = re.compile("by (.*?) \(|by (.*?)$")
+# string = "Demolished by a hill giant"
 # print(re.search(regex, string).groups())
 # %%
 
@@ -301,6 +312,7 @@ class Skill(Base):
         else:
             self.name = Skill_table(skill_name)
             db_session.add(self.name)
+            db_session.commit()
 
 
 class Skill_table(Base):
@@ -333,6 +345,7 @@ class Spell(Base):
         else:
             self.name = Spell_table(spell_name)
             db_session.add(self.name)
+            db_session.commit()
 
 
 class Spell_table(Base):
