@@ -432,6 +432,7 @@ def get_abbreviation(string):
     Ex: Spriggan -> Sp
           Enchanter -> En
           Hill Orc -> Ho"""
+
     # List of every race/background whose abbreviation isn't the first 2
     # letters or the initials of two words
     weird_abb = {"Demigod": "Dg", "Demonspawn": "Ds", "Draconian": "Dr",
@@ -442,10 +443,16 @@ def get_abbreviation(string):
 
     if string in weird_abb.keys():
         abbreviation = weird_abb[string]
-    elif len(string.split(" ")) == 1:
+
+    # we check for number of upper letters instead of spaces because some
+    # morgues are weird -> Chaos Knight as ChaosKnight -.-
+    elif sum(1 for c in string if c.isupper()) == 1:
         abbreviation = string[:2]
     else:
-        abbreviation = string.split(" ")[0][0] + string.split(" ")[1][0]
+        abbreviation = string[0]
+        for c in string[1:]:
+            if c.isupper():
+                abbreviation += c
 
     return abbreviation
 

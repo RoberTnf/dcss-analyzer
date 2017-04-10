@@ -4,24 +4,28 @@ import re
 import os
 import sys
 import numpy as np
+
 from bs4 import BeautifulSoup
 from models import Morgue, BG_abbreviation, Race_abbreviation, StatRequest
 from database import db_session, init_db
+from flask import jsonify, json
+from time import time
 from os import walk, remove, listdir
 from os.path import join, isfile
-from flask import jsonify, json
-from sqlalchemy.sql import func
-from time import time
 from sqlalchemy import text
+from sqlalchemy.sql import func
 
-debug = True
+
+# global variables
+DEBUG = True
 N_TO_CACHE = 100
 
 
-def download_morgues(base_url, base_folder="morgues", debug=False):
+def download_morgues(base_url, base_folder="morgues"):
     """Downloads morgues from base_url into base_folder"""
-    # get link to each user morgue's folder
-    if debug:
+
+    # get links to each user morgue's folder
+    if DEBUG:
         print("Indexing each user morgue's folder for {}".format(base_url))
     resp_base = urllib.request.urlopen(base_url)
     soup_base = BeautifulSoup(
@@ -32,7 +36,7 @@ def download_morgues(base_url, base_folder="morgues", debug=False):
     for user in soup_base.find_all('a', href=True):
         # avoid the parent directory link and the order links
         if user["href"] != "/crawl/" and user["href"][0] != "?":
-            if debug:
+            if DEBUG:
                 print("\n\nIndexing {} morgue's folder".format(user["href"]))
                 print("Link : {}".format(base_url + user["href"]))
             resp_user = urllib.request.urlopen(base_url + user["href"])
@@ -44,68 +48,106 @@ def download_morgues(base_url, base_folder="morgues", debug=False):
             directory = base_folder + user["href"]
             if not os.path.exists(directory):
                 os.makedirs(directory)
+
+            # download each morgue
             for morgue in re.findall(re.compile(
                     "morgue.*\.txt"), soup_user.text):
                 # check if we already downloaded OR if it is already in the DB
                 if not os.path.isfile(directory + morgue) or \
                         not Morgue.query.filter_by(filename=directory+morgue):
-                    if debug:
+                    if DEBUG:
                         print("Downloading {}: ".format(
                               base_url + user["href"] + morgue))
                     text = urllib.request.urlopen(
                         base_url + user["href"] + morgue).read()
                     with open(directory + morgue, "wb") as f:
                         f.write(text)
-                elif debug:
+                elif DEBUG:
                     print("{} already exists".format(directory + morgue))
 
 
 def load_morgues_to_db(n=0):
-    """Loads all the morgues present in directory "morgues" to DB"""
+    """Loads all the morgues present in directory "morgues" to DB.
+    n: max number of morgues to parse, if 0 -> infinite."""
+
+    # create tables if needed
     init_db()
+    # counter of morgues parsed
     i = 0
-    if debug:
+    # counter of morgues already in db
+    j = 0
+
+    if DEBUG:
         print("loading morgues")
         t = time()
+
+    # all the filenames of morgues in db
+    db_morgues = db_session.query(Morgue.filename).all()
+
+    # do for every *.txt in morgues/
     for dirpath, dirnames, filenames in walk("morgues"):
         for filename in [f for f in filenames if f.endswith(".txt")]:
-            if i % 1000 == 0 and i != 0 and debug:
-                db_session.commit()
-                if debug:
-                    print("{} s to load 1000 morgues, total {} morgues".format(
-                    time() - t_c, i))
-                    t=time
+
+            #if n morgues added, end
             if i >= n and n > 0:
                 print("{} morgues loaded".format(i))
                 db_session.commit()
                 return
-            if not Morgue.query.filter_by(filename=filename).first():
+
+            # add only if not already in db
+            if not (filename,) in db_morgues:
                 run = Morgue(join(dirpath, filename))
                 if run.crawl and run.time:
                     db_session.add(run)
                 i += 1
+            else:
+                j += 1
+
+            # commit changes to DB every 1000 processed morgues
+            if i % 1000 == 0 and i != 0 and DEBUG:
+                db_session.commit()
+                if DEBUG:
+                    print("{} s to load 1000 morgues, total {} morgues".format(
+                        time() - t, i))
+                    print("{} morgues already in db".format(j))
+                    j = 0
+                    t = time()
+
     print("{} morgues loaded".format(i))
     db_session.commit()
 
 
 def search(q):
-    results = Race_abbreviation.query.filter(
-        Race_abbreviation.abbreviation.ilike(q + "%")
-        ).all()
-    results += BG_abbreviation.query.filter(
-        BG_abbreviation.abbreviation.ilike(q + "%")
-        ).all()
-    results += BG_abbreviation.query.filter(
-        BG_abbreviation.string.ilike(q + "%")
-        ).all()
-    results += Race_abbreviation.query.filter(
-        Race_abbreviation.string.ilike(q + "%")
-        ).all()
+    """Returns json object ready for typeahead with search results from DB for
+    omnisearch.
+
+    q: string to be searched for."""
+
+
+    # add results from abbreviations and full strings
+    if len(q) <= 2:
+        results = Race_abbreviation.query.filter(
+            Race_abbreviation.abbreviation.ilike(q + "%")
+            ).all()
+        results += BG_abbreviation.query.filter(
+            BG_abbreviation.abbreviation.ilike(q + "%")
+            ).all()
+    else:
+        results += BG_abbreviation.query.filter(
+            BG_abbreviation.string.ilike(q + "%")
+            ).all()
+        results += Race_abbreviation.query.filter(
+            Race_abbreviation.string.ilike(q + "%")
+            ).all()
+
+    for r in results:
+        print(r.abbreviation)
+
     # eliminate duplicates and convert to list of dicts
     results = [r.as_dict() for r in set(results)]
 
     # check for combos
-    if len(q) >= 2 and len(q) <= 4:
+    if len(q) <= 4:
         race = Race_abbreviation.query.filter(
             Race_abbreviation.abbreviation.ilike(q[:2])
             ).first()
@@ -265,12 +307,12 @@ def stats(**kwargs):
         return jsonify(results)
 
     # fill results with information about the runs
-    if debug:
+    if DEBUG:
         print("{} s to filter.".format(time() - t))
         t = time()
 
     # most common branch_order
-    if debug:
+    if DEBUG:
         t = time()
         t_tot = time()
 
@@ -290,7 +332,7 @@ def stats(**kwargs):
     results["mean_Dex"] = float(db_session.query(func.avg(Morgue.Dex)).filter(text(db_filter)).first()[0])
     results["mean_SH"] = float(db_session.query(func.avg(Morgue.SH)).filter(text(db_filter)).first()[0])
 
-    if debug:
+    if DEBUG:
         print("{} s to calculate means.".format(time() - t))
         t = time()
         t2=time()
@@ -298,7 +340,7 @@ def stats(**kwargs):
     if "name" not in kwargs:
         results["players"] = db_session.query(Morgue.name, func.count(Morgue.name)).filter(text(db_filter)).group_by(Morgue.name).all()
 
-    if debug:
+    if DEBUG:
         print("{} s to calculate name list.".format(time() - t2))
         t2=time()
 
@@ -306,7 +348,7 @@ def stats(**kwargs):
         gods = {}
         results["gods"] = db_session.query(Morgue.god, func.count(Morgue.god)).filter(text(db_filter)).group_by(Morgue.god).all()
 
-    if debug:
+    if DEBUG:
         print("{} s to calculate god list.".format(time() - t2))
         t2=time()
 
@@ -330,7 +372,7 @@ def stats(**kwargs):
                 morgues.filter(Morgue.background_id == bg.id).count()
         results["bgs"] = bgs
 
-    if debug:
+    if DEBUG:
         print("{} s to calculate killer list.".format(time() - t2))
         print("{} s to obtain name, god and killer lists.".format(time() - t))
         print("{} s in total.".format(time() - t_tot))
@@ -402,4 +444,4 @@ if len(sys.argv) == 2:
     if sys.argv[1] == "download":
         url = "http://crawl.xtahua.com/crawl/morgue/"
         folder = "morgues/crawl-xtahua/"
-        download_morgues(url, folder, debug=True)
+        download_morgues(url, folder)

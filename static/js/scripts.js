@@ -312,23 +312,6 @@ function display_stats(data, statStr) {
         $.plot("#uniqueKillers .graph", Points, options);
         $("#uniqueKillers .graph").showMemo("#uniqueKillers .graph-memo");
     }
-
-    /*
-    // Gods section:
-    if (hasOwnProperty(data, "gods"))
-    {
-        $("#main-wrapper").append("<div id=gods class=statSection></div>")
-        $("#gods").append("<h3 class=sectionTitle> Gods: </h3>")
-        // add div for graph
-        $("#gods").append('<div id="gods-pie" style="width:100%;height:300px"></div>')
-        $("#gods").append('<div id="gods-memo" style="text-align:center;height:30px;width:250px;height:20px;text-align:center;margin:0 auto"></div>')
-        var Points = [];
-        $.each(data.gods, function(i, item){
-            Points.push({data: item, label: i})
-        });
-        $.plot("#gods-pie", Points, options)
-        $("#gods").showMemo("#gods-memo");
-    }*/
 }
 
 
