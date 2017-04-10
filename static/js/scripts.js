@@ -1,11 +1,11 @@
 // call when page is ready
-$(function(){
+$(function() {
     configure()
 
 })
 
-function configure()
-{
+
+function configure() {
     // configure main typeahead
     var options = {
         hint: true,
@@ -68,9 +68,9 @@ function configure()
                 parameters.god = $("#selectGod").val();
                 statStr += ", worshiping {0}".format($("#selectGod").val());
             }
-            if ($("#selectName").val() != null && $("#selectName").val() != "") {
-                parameters.name = $("#selectName").val();
-                statStr += ", for player {0}".format($("#selectName").val());
+            if ($("#selectPlayer").val() != null && $("#selectPlayer").val() != "") {
+                parameters.name = $("#selectPlayer").val();
+                statStr += ", for player {0}".format($("#selectPlayer").val());
             }
             if ($("#selectVersion").val() != null && $("#selectVersion").val() != "") {
                 parameters.version = $("#selectVersion").val();
@@ -124,6 +124,7 @@ function configure()
     });
 }
 
+
 function hasOwnProperty(obj, prop) {
     // to know if obj has prop
     var proto = obj.__proto__ || obj.constructor.prototype;
@@ -131,10 +132,13 @@ function hasOwnProperty(obj, prop) {
         (!(prop in proto) || proto[prop] !== obj[prop]);
 }
 
-function display_not_found(){
+
+function display_not_found() {
     $("#main-wrapper").append('<h2>ERROR: no results with those constraints</h2>')
 }
-function display_stats(data, statStr){
+
+
+function display_stats(data, statStr) {
     // graph options
     // var colors = ["#f00000", "#f01000", "#00f000", "000f00", "#0000f0", "00000f"]
     var options = {
@@ -327,8 +331,8 @@ function display_stats(data, statStr){
     }*/
 }
 
-function search(query, syncResults, asyncResults)
-{
+
+function search(query, syncResults, asyncResults) {
     // get results
     var parameters = {
         q: query
@@ -344,8 +348,8 @@ function search(query, syncResults, asyncResults)
     });
 }
 
-function searchGods(query, syncResults, asyncResults)
-{
+
+function searchGods(query, syncResults, asyncResults) {
     // get results
     var parameters = {
         q: query
@@ -361,8 +365,8 @@ function searchGods(query, syncResults, asyncResults)
     });
 }
 
-function searchPlayers(query, syncResults, asyncResults)
-{
+
+function searchPlayers(query, syncResults, asyncResults) {
     // get results
     var parameters = {
         q: query
@@ -378,6 +382,7 @@ function searchPlayers(query, syncResults, asyncResults)
     });
 }
 
+
 String.prototype.format = String.prototype.f = function() {
     var s = this,
         i = arguments.length;
@@ -388,11 +393,13 @@ String.prototype.format = String.prototype.f = function() {
     return s;
 };
 
+
 String.prototype.isUpperCase = function() {
     return this.valueOf().toUpperCase() === this.valueOf();
 };
 
-$.ajaxSetup({
+
+$.ajaxSetup( {
     beforeSend:function(){
         // show gif here, eg:
         $("#loader-gif").show();

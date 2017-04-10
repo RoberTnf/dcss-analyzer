@@ -74,8 +74,8 @@ def load_morgues_to_db(n=0):
                 db_session.commit()
                 if debug:
                     print("{} s to load 1000 morgues, total {} morgues".format(
-                    time() - t, i))
-                    t=time()
+                    time() - t_c, i))
+                    t=time
             if i >= n and n > 0:
                 print("{} morgues loaded".format(i))
                 db_session.commit()
@@ -136,6 +136,7 @@ def searchGods(q):
 
     return jsonify(results)
 
+
 def searchPlayers(q):
     results = Morgue.query.filter(
         Morgue.name.ilike(q + "%")
@@ -144,6 +145,7 @@ def searchPlayers(q):
     results = [{"suggestion": r.name} for r in set(results)]
 
     return jsonify(results)
+
 
 def stats(**kwargs):
     keys = list(kwargs.keys())
