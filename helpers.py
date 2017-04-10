@@ -61,14 +61,21 @@ def download_morgues(base_url, base_folder="morgues", debug=False):
                     print("{} already exists".format(directory + morgue))
 
 
-def load_morgues_to_db(debug=False, n=0):
+def load_morgues_to_db(n=0):
     """Loads all the morgues present in directory "morgues" to DB"""
     init_db()
     i = 0
     if debug:
         print("loading morgues")
+        t = time()
     for dirpath, dirnames, filenames in walk("morgues"):
         for filename in [f for f in filenames if f.endswith(".txt")]:
+            if i % 1000 == 0 and i != 0 and debug:
+                db_session.commit()
+                if debug:
+                    print("{} s to load 1000 morgues, total {} morgues".format(
+                    time() - t_c, i))
+                    t=time
             if i >= n and n > 0:
                 print("{} morgues loaded".format(i))
                 db_session.commit()
@@ -78,8 +85,6 @@ def load_morgues_to_db(debug=False, n=0):
                 if run.crawl and run.time:
                     db_session.add(run)
                 i += 1
-            elif debug:
-                print("Morgue already in db")
     print("{} morgues loaded".format(i))
     db_session.commit()
 
@@ -118,6 +123,27 @@ def search(q):
                     "string": "{} {}".format(race.string, i.string)
                 }
                 results.append(r)
+
+    return jsonify(results)
+
+
+def searchGods(q):
+    results = Morgue.query.filter(
+        Morgue.god.ilike(q + "%")
+        ).distinct(Morgue.god).all()
+    # eliminate duplicates and convert to list of dicts
+    results = [{"suggestion": r.god} for r in set(results)]
+
+    return jsonify(results)
+
+
+def searchPlayers(q):
+    results = Morgue.query.filter(
+        Morgue.name.ilike(q + "%")
+        ).distinct(Morgue.name).all()
+    # eliminate duplicates and convert to list of dicts
+    results = [{"suggestion": r.name} for r in set(results)]
+
     return jsonify(results)
 
 
@@ -190,7 +216,7 @@ def stats(**kwargs):
     if "version" in kwargs:
         # version = 0.15.4645 -> 0.15
         version = kwargs["version"][0][:4] + "%"
-        morgues = morgues.filter(Morgue.version.like(version))
+        morgues = morgues.filter(Morgue.version.ilike(version))
 
     if not morgues.first():
         results["ERROR"] = "No results for your query"

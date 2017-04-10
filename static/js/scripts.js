@@ -1,11 +1,11 @@
 // call when page is ready
-$(function(){
+$(function() {
     configure()
 
 })
 
-function configure()
-{
+
+function configure() {
     // configure main typeahead
     var options = {
         hint: true,
@@ -68,9 +68,9 @@ function configure()
                 parameters.god = $("#selectGod").val();
                 statStr += ", worshiping {0}".format($("#selectGod").val());
             }
-            if ($("#selectName").val() != null && $("#selectName").val() != "") {
-                parameters.name = $("#selectName").val();
-                statStr += ", for player {0}".format($("#selectName").val());
+            if ($("#selectPlayer").val() != null && $("#selectPlayer").val() != "") {
+                parameters.name = $("#selectPlayer").val();
+                statStr += ", for player {0}".format($("#selectPlayer").val());
             }
             if ($("#selectVersion").val() != null && $("#selectVersion").val() != "") {
                 parameters.version = $("#selectVersion").val();
@@ -124,6 +124,7 @@ function configure()
     });
 }
 
+
 function hasOwnProperty(obj, prop) {
     // to know if obj has prop
     var proto = obj.__proto__ || obj.constructor.prototype;
@@ -131,10 +132,13 @@ function hasOwnProperty(obj, prop) {
         (!(prop in proto) || proto[prop] !== obj[prop]);
 }
 
-function display_not_found(){
+
+function display_not_found() {
     $("#main-wrapper").append('<h2>ERROR: no results with those constraints</h2>')
 }
-function display_stats(data, statStr){
+
+
+function display_stats(data, statStr) {
     // graph options
     // var colors = ["#f00000", "#f01000", "#00f000", "000f00", "#0000f0", "00000f"]
     var options = {
@@ -202,8 +206,8 @@ function display_stats(data, statStr){
         $("#winrate").append("<h3 class=sectionTitle> Games: </h3>")
         // add div for graph
         $("#winrate").append("<div class=sectionText></div>")
-        winrateStr = "In {0} games {1} were victories (<b>{2}</b> winrate).".f(
-            data.games, data.wins, data.winrate
+        winrateStr = "In {0} games {1} were victories (<b>{2}%</b> winrate).".f(
+            data.games, data.wins, data.winrate.slice(0,5)
         )
         $("#winrate .sectionText").append(winrateStr)
         $("#winrate").append('<div class="graph-container"></div>');
@@ -227,11 +231,11 @@ function display_stats(data, statStr){
         var max = {"god":"none", "count":0};
         var total = 0;
         $.each(data.gods, function(i, item){
-            Points.push({data: item, label: i});
-            total += item;
-            if (max.count < item && i != "none") {
-                max.count=item
-                max.god=i
+            Points.push({data: item[1], label: item[0]});
+            total += item[1];
+            if (max.count < item[1] && item[0] != "none") {
+                max.count=item[1]
+                max.god=item[0]
             };
         });
         godsStr = "The most played god is <b>{0}</b> with {1} games (<b>{2}%</b>)".f(
@@ -256,14 +260,14 @@ function display_stats(data, statStr){
         var max = {"god":"none", "count":0};
         var total = 0;
         $.each(data.killers, function(i, item){
-            Points.push({data: item, label: i});
-            total += item;
-            if (max.count < item && i != "other" && i != "quit") {
-                max.count=item
-                max.god=i
+            Points.push({data: item[1], label: item[0]});
+            total += item[1];
+            if (max.count < item[1] && item[0] != "none" && item[0] != "quit") {
+                max.count=item[1]
+                max.god=item[0]
             };
         });
-        killersStr = "The monster with most kills is <b>{0}</b> with {1} kills (<b>{2}%</b>)".f(
+        killersStr = "The unique with most kills is <b>{0}</b> with {1} kills (<b>{2}%</b>)".f(
             max.god, max.count, (max.count*100/total).toString().slice(0,5)
         )
         $("#killers .sectionText").append(killersStr)
@@ -287,14 +291,16 @@ function display_stats(data, statStr){
         var total_uniques = 0;
         $.each(data.killers, function(i, item){
             // if first char is uppercase
-            if (i.slice(0,1).isUpperCase()){
-                Points.push({data: item, label: i});
-                if (max.count < item && i != "other" && i != "quit") {
-                    max.count=item
-                    max.killer=i
-                };
+            if (item[0] != null) {
+                if (item[0].slice(0,1).isUpperCase()){
+                    Points.push({data: item[1], label: item[0]});
+                    if (max.count < item[1] && item[0] != "other" && item[0] != "quit") {
+                        max.count=item[1]
+                        max.killer=item[0]
+                    };
+                }
             }
-            total += item;
+            total += item[1];
         });
         uniqueKillersStr = "The monster with most kills is <b>{0}</b> with {1} kills (<b>{2}%</b> of totals)".f(
             max.killer, max.count, (max.count*100/total).toString().slice(0,5)
@@ -306,7 +312,6 @@ function display_stats(data, statStr){
         $.plot("#uniqueKillers .graph", Points, options);
         $("#uniqueKillers .graph").showMemo("#uniqueKillers .graph-memo");
     }
-
 
     /*
     // Gods section:
@@ -326,8 +331,8 @@ function display_stats(data, statStr){
     }*/
 }
 
-function search(query, syncResults, asyncResults)
-{
+
+function search(query, syncResults, asyncResults) {
     // get results
     var parameters = {
         q: query
@@ -343,8 +348,8 @@ function search(query, syncResults, asyncResults)
     });
 }
 
-function searchGods(query, syncResults, asyncResults)
-{
+
+function searchGods(query, syncResults, asyncResults) {
     // get results
     var parameters = {
         q: query
@@ -360,8 +365,8 @@ function searchGods(query, syncResults, asyncResults)
     });
 }
 
-function searchPlayers(query, syncResults, asyncResults)
-{
+
+function searchPlayers(query, syncResults, asyncResults) {
     // get results
     var parameters = {
         q: query
@@ -377,6 +382,7 @@ function searchPlayers(query, syncResults, asyncResults)
     });
 }
 
+
 String.prototype.format = String.prototype.f = function() {
     var s = this,
         i = arguments.length;
@@ -387,11 +393,13 @@ String.prototype.format = String.prototype.f = function() {
     return s;
 };
 
+
 String.prototype.isUpperCase = function() {
     return this.valueOf().toUpperCase() === this.valueOf();
 };
 
-$.ajaxSetup({
+
+$.ajaxSetup( {
     beforeSend:function(){
         // show gif here, eg:
         $("#loader-gif").show();

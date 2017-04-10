@@ -1,10 +1,17 @@
+.filterText {
+    font-size: 22px;
+    color: #fff;
+    font-weight: 500;
+}
+
 #search .typeahead
 {
     /* override typeahead.js's transparent background */
     background-color: #ffffff !important;
     border-radius: 8px;
     /* text box's width */
-    width: 500px;
+    width: 600px;
+    height: 50px;
 }
 
 .tt-hint {
@@ -51,4 +58,73 @@
 
 .tt-suggestion p {
     margin: 0;
+}
+
+#filterVictory {display:inline-block;margin-right:10px; width:200px;}
+#filterGod {display:inline-block; width:200px;margin-right:20px;}
+#filterName {display:inline-block; width:200px;}
+#filterVersion{display:inline-block; width:200px}
+#filterRunes{display:inline-block; width:200px; margin-right:10px}
+#firstRowFilters{padding-bottom: 10px}
+
+#filter_elements .typeahead
+{
+    /* override typeahead.js's transparent background */
+    background-color: #ffffff !important;
+    border-radius: 8px;
+    /* text box's width */
+    width: 200px;
+}
+
+#filter_elements .tt-menu {
+    width: 200px;
+}
+#filterList h2{
+    padding-top: 20px
+}
+
+#filter_list ul{
+    list-style-type: none;
+}
+
+#statStr {
+    padding-bottom: 15px;
+}
+
+#main-wrapper .sectionTitle{
+    padding-top: 15px;
+}
+
+#main-wrapper .graph-container{
+    width:40%;
+    height:400px;
+    display: inline-block;
+    vertical-align:middle;
+}
+
+#main-wrapper .graph {
+    width:40%px;
+    height:380px;
+}
+
+#main-wrapper .graph-memo {
+    text-align:center;
+    width:250px;
+    height:20px;
+    text-align:center;
+    margin:0 auto;
+}
+
+#main-wrapper .sectionText{
+    display: inline-block;
+    vertical-align:middle;
+    color: #000;
+}
+
+#loader-gif {
+    padding-top: 10px;
+    height:50px;
+    width:50px;
+    margin:auto;
+    display:none;
 }

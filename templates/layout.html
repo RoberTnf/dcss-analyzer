@@ -1,66 +1,76 @@
 <!DOCTYPE HTML>
 <!--
-	Dopetrope by HTML5 UP
-	html5up.net | @ajlkn
-	Free for personal and commercial use under the CCA 3.0 license (html5up.net/license)
+    Dopetrope by HTML5 UP
+    html5up.net | @ajlkn
+    Free for personal and commercial use under the CCA 3.0 license (html5up.net/license)
 -->
 <html>
-	<head>
-		<title>DCSS Analyzer: {% block title %}{% endblock %}</title>
-		<meta charset="utf-8" />
-		<meta name="viewport" content="width=device-width, initial-scale=1" />
-		<!--[if lte IE 8]><script src="static/js/ie/html5shiv.js"></script><![endif]-->
-		<link rel="stylesheet" href="static/css/main.css" />
-        <link rel="stylesheet" href="static/css/custom.css"/ />
-		<!--[if lte IE 8]><link rel="stylesheet" href="static/css/ie8.css" /><![endif]-->
-	</head>
-	<body class="homepage">
-		<div id="page-wrapper">
+    <head>
+        <title>DCSS Analyzer: {% block title %}{% endblock %}</title>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <!--[if lte IE 8]><script src="static/js/ie/html5shiv.js"></script><![endif]-->
+        <link rel="stylesheet" href="static/css/main.css" />
+        <link rel="stylesheet" href="static/css/custom.css"/>
+        <link rel="stylesheet" href="static/css/tooltipster.main.css"/>
+        <link rel="stylesheet" href="static/css/plugins/tooltipster/sideTip/themes/tooltipster-sideTip-punk.min.css"/>
+        <!--[if lte IE 8]><link rel="stylesheet" href="static/css/ie8.css" /><![endif]-->
+    </head>
+    <body class="homepage">
+        <div id="page-wrapper">
 
-			<!-- Header -->
-				<div id="header-wrapper">
-					<div id="header">
+            <!-- Header -->
+                <div id="header-wrapper">
+                    <div id="header">
 
-						<!-- Logo -->
-							<h1><a href="{{url_for("index")}}">DCSS Analyzer</a></h1>
+                        <!-- Logo -->
+                            <h1><a href="{{url_for("index")}}">DCSS Analyzer</a></h1>
 
-						<!-- Nav -->
-							<nav id="nav">
-								<ul>
-									<li class="current"><a href="{{url_for("index")}}">Home</a></li>
-									<li>
-										<a href="#">Features</a>
-										<ul>
-											<li><a href="{{url_for("morgue_analyzer")}}">Morgue Analyzer</a></li>
-											<li><a href="{{url_for("statistics")}}">Statistics</a></li>
-										</ul>
-									</li>
-									<li><a href="{{url_for("about")}}">About</a></li>
-								</ul>
-							</nav>
+                        <!-- Nav -->
+                            <nav id="nav">
+                                <ul>
+                                    <li class="current"><a href="{{url_for("index")}}">Home</a></li>
+                                    <li>
+                                        <a href="#">Features</a>
+                                        <ul>
+                                            <li><a href="{{url_for("morgue_analyzer")}}">Morgue Analyzer</a></li>
+                                            <li><a href="{{url_for("statistics")}}">Statistics</a></li>
+                                        </ul>
+                                    </li>
+                                    <li><a href="{{url_for("about")}}">About</a></li>
+                                </ul>
+                            </nav>
 
-						<!-- Banner -->
-							<section id="banner">
-								<header>
-									{% block header %}{% endblock %}
-								</header>
-							</section>
-					</div>
-				</div>
-		</div>
+                        <!-- Banner -->
+                            <section id="banner">
+                                <header>
+                                    {% block header %}{% endblock %}
+                                </header>
+                            </section>
+                        <!-- Main -->
+                            <div id="main-wrapper">
+                            </div>
+                    </div>
+                </div>
+        </div>
 
-		<!-- Scripts -->
-			<script src="static/js/jquery-3.2.0.js"></script>
-			<script src="static/js/jquery.dropotron.min.js"></script>
-			<script src="static/js/skel.min.js"></script>
-			<script src="static/js/skel-viewport.min.js"></script>
-			<script src="static/js/util.js"></script>
-			<!--[if lte IE 8]><script src="static/js/ie/respond.min.js"></script><![endif]-->
-			<script src="static/js/main.js"></script>
+        <!-- Scripts -->
+            <script src="static/js/jquery-3.2.0.js"></script>
+            <script src="static/js/jquery.dropotron.min.js"></script>
+            <script src="static/js/skel.min.js"></script>
+            <script src="static/js/skel-viewport.min.js"></script>
+            <script src="static/js/util.js"></script>
+            <!--[if lte IE 8]><script src="static/js/ie/respond.min.js"></script><![endif]-->
+            <script src="static/js/main.js"></script>
             <script src="static/js/scripts.js"></script>
             <script src="static/js/handlebars-v4.0.5.js"></script>
             <script src="static/js/typeahead.js"></script>
             <script src="static/js/jquery.canvasjs.min.js"></script>
+            <script language="javascript" type="text/javascript" src="static/js/flot/jquery.flot.js"></script>
+            <script src="static/js/flot/jquery.flot.pie.js"></script>
+            <script src="static/js/validator/dist/jquery.validate.js"></script>
+            <script src="static/js/tooltipster.main.js"></script>
+            <script src="static/js/tooltipster.bundle.js"></script>
             {{ JSGlue.include() }}
-	</body>
+    </body>
 </html>
