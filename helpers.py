@@ -14,8 +14,6 @@ from sqlalchemy.sql import func
 from time import time
 
 debug = True
-
-
 N_TO_CACHE = 100
 
 

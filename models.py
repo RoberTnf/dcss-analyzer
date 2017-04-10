@@ -6,6 +6,8 @@ from sqlalchemy.orm import relationship, backref
 from database import Base, db_session
 
 debug = True
+
+
 class StatRequest(Base):
     """Holds each request done to /stats, with the number of time done,
     to cache most requested
@@ -284,13 +286,6 @@ class Morgue(Base):
                     self.branch_order = "{}{}-{} ".format(branch.strip(), floor.strip(), floor.strip())
 
 
-# %% test regex
-# regex = re.compile("by (.*?) \(|by (.*?)$")
-# string = "Demolished by a hill giant"
-# print(re.search(regex, string).groups())
-# %%
-
-
 class Skill(Base):
     """Stores learned skills, backrefs to morgue"""
     __tablename__ = "skills"
@@ -468,3 +463,10 @@ def get_branch_abbreviation(branch_string):
         return weird
     else:
         return branch_string[0]
+
+
+# %% test regex
+# regex = re.compile("by (.*?) \(|by (.*?)$")
+# string = "Demolished by a hill giant"
+# print(re.search(regex, string).groups())
+# %%
