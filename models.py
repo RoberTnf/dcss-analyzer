@@ -85,7 +85,7 @@ class Morgue(Base):
         name_regex = re.compile("(\d+ )(\w+)( the)")
         time_regex = re.compile("lasted (\d*).*?(\d\d:\d\d:\d\d) \((\d+)")
         success_regex = re.compile("Escaped with the Orb")
-        race_combo_regex = re.compile("Began as an* (.*) on")
+        race_combo_regex = re.compile("Began as an*\s+(.*)\s+on")
         XL_regex = re.compile("AC.+?(\d+).+?Str.+?(\d+).+?XL.+?(\d+)")
         EV_regex = re.compile("EV.+?(\d+).+?Int.+?(\d+).+?God.+?(.*)")
         faith_regex = re.compile("(.+?)\s+\[(\**)")
@@ -139,17 +139,22 @@ class Morgue(Base):
                     if found:
                         race_string, background_string =\
                             race_background(found.group(1))
+
+                        race_abv, race_str = get_abbreviation(
+                            background_string)
                         self.race = Race_abbreviation.query.filter_by(
-                            string=race_string).first()
+                            string=race_str).first()
                         if not self.race:
-                            self.race = Race_abbreviation(race_string)
+                            self.race = Race_abbreviation(race_str, race_abv)
                             db_session.add(self.race)
                             db_session.commit()
+
+                        bg_abv, bg_str = get_abbreviation(background_string)
                         self.background = BG_abbreviation.query\
-                            .filter_by(string=background_string).first()
+                            .filter_by(string=bg_str).first()
                         if not self.background:
                             self.background = BG_abbreviation(
-                                background_string)
+                                bg_str, bg_abv)
                             db_session.add(self.background)
                             db_session.commit()
 
@@ -364,8 +369,9 @@ class Race_abbreviation(Base):
     abbreviation = Column(String(4))
     string = Column(String(20))
 
-    def __init__(self, string):
-        self.abbreviation, self.string = get_abbreviation(string)
+    def __init__(self, string, abbreviation):
+        self.abbreviation = abbreviation
+        self.string = string
 
     def as_dict(self):
         return {c.name: getattr(self, c.name)
@@ -382,8 +388,9 @@ class BG_abbreviation(Base):
     abbreviation = Column(String(4))
     string = Column(String(20))
 
-    def __init__(self, string):
-        self.abbreviation, self.string = get_abbreviation(string)
+    def __init__(self, string, abbreviation):
+        self.abbreviation = abbreviation
+        self.string = string
 
     def as_dict(self):
         return {c.name: getattr(self, c.name)
