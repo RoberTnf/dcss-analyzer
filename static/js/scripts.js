@@ -267,7 +267,7 @@ function display_stats(data, statStr) {
                 max.god=item[0]
             };
         });
-        killersStr = "The unique with most kills is <b>{0}</b> with {1} kills (<b>{2}%</b>)".f(
+        killersStr = "The monster with most kills is <b>{0}</b> with {1} kills (<b>{2}%</b>)".f(
             max.god, max.count, (max.count*100/total).toString().slice(0,5)
         )
         $("#killers .sectionText").append(killersStr)

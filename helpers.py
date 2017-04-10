@@ -12,6 +12,7 @@ from os.path import join, isfile
 from flask import jsonify, json
 from sqlalchemy.sql import func
 from time import time
+from sqlalchemy import text
 
 debug = True
 N_TO_CACHE = 100
@@ -172,7 +173,7 @@ def stats(**kwargs):
     results = {}
     morgues = Morgue.query
     case = None
-
+    db_filter = ""
     t = time()
     if "abbreviation" in kwargs:
         abv = kwargs["abbreviation"][0]
@@ -184,14 +185,26 @@ def stats(**kwargs):
                     Race_abbreviation.abbreviation == abv).first().id
                 morgues = morgues.filter(
                     Morgue.race_id == id)
+
+                if db_filter:
+                    db_filter += " AND morgues.race_id = {}".format(id)
+                else:
+                    db_filter += "morgues.race_id = {}".format(id)
                 case = "race"
+
             # check if abv is a background
             elif morgues.filter(BG_abbreviation.abbreviation == abv).first():
                 id = BG_abbreviation.query.filter(
                     BG_abbreviation.abbreviation == abv).first().id
                 morgues = morgues.filter(
                     Morgue.background_id == id)
+
+                if db_filter:
+                    db_filter += " AND morgues.background_id = {}".format(id)
+                else:
+                    db_filter += "morgues.background_id = {}".format(id)
                 case = "bg"
+
         elif len(abv) == 4:
             bg_id = BG_abbreviation.query.filter(
                 BG_abbreviation.abbreviation == abv[2:]).first().id
@@ -200,27 +213,106 @@ def stats(**kwargs):
             morgues = morgues.filter(
                 (Morgue.race_id == race_id) &
                 (Morgue.background_id == bg_id))
+
+            if db_filter:
+                db_filter += " AND morgues.race_id = {} AND morgues.background_id = {}".format(race_id, bg_id)
+            else:
+                db_filter += "morgues.race_id = {} AND morgues.background_id = {}".format(race_id, bg_id)
             case = "combo"
 
     # apply filters provided in kwargs
     if "god" in kwargs:
         morgues = morgues.filter(Morgue.god == kwargs["god"][0])
+
+        if db_filter:
+            db_filter += " AND morgues.god = '{}'".format(kwargs["god"][0])
+        else:
+            db_filter += "morgues.god = '{}'".format(kwargs["god"][0])
     if "name" in kwargs:
         morgues = morgues.filter(Morgue.name == kwargs["name"][0])
+
+        if db_filter:
+            db_filter += " AND morgues.name = '{}'".format(kwargs["name"][0])
+        else:
+            db_filter += "morgues.name = '{}'".format(kwargs["name"][0])
     if "success" in kwargs:
         morgues = morgues.filter(Morgue.success == kwargs["success"][0])
+
+        if db_filter:
+            db_filter += " AND morgues.success = '{}'".format(kwargs["success"][0])
+        else:
+            db_filter += "morgues.success = '{}'".format(kwargs["success"][0])
     if "runes" in kwargs:
         morgues = morgues.filter(Morgue.runes == kwargs["runes"][0])
+
+        if db_filter:
+            db_filter += " AND morgues.runes = '{}'".format(kwargs["runes"][0])
+        else:
+            db_filter += "morgues.runes = '{}'".format(kwargs["runes"][0])
+
     if "version" in kwargs:
         # version = 0.15.4645 -> 0.15
         version = kwargs["version"][0][:4] + "%"
         morgues = morgues.filter(Morgue.version.ilike(version))
+
+        if db_filter:
+            db_filter += " AND morgues.version LIKE '{}%'".format(kwargs["version"][0])
+        else:
+            db_filter += "morgues.version LIKE '{}%'".format(kwargs["version"][0])
 
     if not morgues.first():
         results["ERROR"] = "No results for your query"
         return jsonify(results)
 
     # fill results with information about the runs
+    if debug:
+        print("{} s to filter.".format(time() - t))
+        t = time()
+
+    # most common branch_order
+    if debug:
+        t = time()
+        t_tot = time()
+
+    print(db_filter)
+    results["branch_order"] = get_medium_branch_order(
+        [morgue.branch_order for morgue in morgues.all()])
+    results["mean_time"] = float(db_session.query(func.avg(Morgue.time)).filter(text(db_filter)).first()[0])
+    results["mean_turns"] = float(db_session.query(func.avg(Morgue.turns)).filter(text(db_filter)).first()[0])
+    results["wins"] = morgues.filter(Morgue.success).count()
+    results["games"] = morgues.count()
+    results["winrate"] = str(results["wins"] * 100 / results["games"]) + "%"
+    results["mean_XL"] = float(db_session.query(func.avg(Morgue.XL)).filter(text(db_filter)).first()[0])
+    results["mean_Str"] = float(db_session.query(func.avg(Morgue.Str)).filter(text(db_filter)).first()[0])
+    results["mean_AC"] = float(db_session.query(func.avg(Morgue.AC)).filter(text(db_filter)).first()[0])
+    results["mean_Int"] = float(db_session.query(func.avg(Morgue.Int)).filter(text(db_filter)).first()[0])
+    results["mean_EV"] = float(db_session.query(func.avg(Morgue.EV)).filter(text(db_filter)).first()[0])
+    results["mean_Dex"] = float(db_session.query(func.avg(Morgue.Dex)).filter(text(db_filter)).first()[0])
+    results["mean_SH"] = float(db_session.query(func.avg(Morgue.SH)).filter(text(db_filter)).first()[0])
+
+    if debug:
+        print("{} s to calculate means.".format(time() - t))
+        t = time()
+        t2=time()
+
+    if "name" not in kwargs:
+        results["players"] = db_session.query(Morgue.name, func.count(Morgue.name)).filter(text(db_filter)).group_by(Morgue.name).all()
+
+    if debug:
+        print("{} s to calculate name list.".format(time() - t2))
+        t2=time()
+
+    if "god" not in kwargs:
+        gods = {}
+        results["gods"] = db_session.query(Morgue.god, func.count(Morgue.god)).filter(text(db_filter)).group_by(Morgue.god).all()
+
+    if debug:
+        print("{} s to calculate god list.".format(time() - t2))
+        t2=time()
+
+    if not kwargs.get("success"):
+        results["killers"] = db_session.query(Morgue.killer, func.count(Morgue.killer)).filter(text(db_filter)).group_by(Morgue.killer).all()
+
     if case == "bg":
         # makes a dictionary with every race with its number of appearences
         races = {}
@@ -239,57 +331,10 @@ def stats(**kwargs):
         results["bgs"] = bgs
 
     if debug:
-        print("{} s to filter.".format(time() - t))
-        t = time()
-
-
-    # most common branch_order
-    if debug:
-        t = time()
-        t_tot = time()
-
-    results["branch_order"] = get_medium_branch_order(
-        [morgue.branch_order for morgue in morgues.all()])
-    results["mean_time"] = float(morgues.session.query(func.avg(Morgue.time)).first()[0])
-    results["mean_turns"] = float(morgues.session.query(func.avg(Morgue.turns)).first()[0])
-    results["wins"] = morgues.filter(Morgue.success).count()
-    results["games"] = morgues.count()
-    results["winrate"] = str(results["wins"] * 100 / results["games"]) + "%"
-    results["mean_XL"] = float(morgues.session.query(func.avg(Morgue.XL)).first()[0])
-    results["mean_Str"] = float(morgues.session.query(func.avg(Morgue.time)).first()[0])
-    results["mean_AC"] = float(morgues.session.query(func.avg(Morgue.time)).first()[0])
-    results["mean_Int"] = float(morgues.session.query(func.avg(Morgue.time)).first()[0])
-    results["mean_EV"] = float(morgues.session.query(func.avg(Morgue.time)).first()[0])
-    results["mean_Dex"] = float(morgues.session.query(func.avg(Morgue.time)).first()[0])
-    results["mean_SH"] = float(morgues.session.query(func.avg(Morgue.time)).first()[0])
-
-    if debug:
-        print("{} s to calculate means.".format(time() - t))
-        t = time()
-        t2=time()
-
-    if "name" not in kwargs:
-        results["players"] = morgues.session.query(Morgue.name, func.count(Morgue.name)).group_by(Morgue.name).all()
-
-    if debug:
-        print("{} s to calculate name list.".format(time() - t2))
-        t2=time()
-
-    if "god" not in kwargs:
-        gods = {}
-        results["gods"] = morgues.session.query(Morgue.god, func.count(Morgue.god)).group_by(Morgue.god).all()
-
-    if debug:
-        print("{} s to calculate god list.".format(time() - t2))
-        t2=time()
-
-    if not kwargs.get("success"):
-        results["killers"] = morgues.session.query(Morgue.killer, func.count(Morgue.killer)).group_by(Morgue.killer).all()
-
-    if debug:
         print("{} s to calculate killer list.".format(time() - t2))
         print("{} s to obtain name, god and killer lists.".format(time() - t))
         print("{} s in total.".format(time() - t_tot))
+
 
     update_cached(stat, results)
     return jsonify(results)
