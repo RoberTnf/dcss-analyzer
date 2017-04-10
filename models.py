@@ -365,8 +365,7 @@ class Race_abbreviation(Base):
     string = Column(String(20))
 
     def __init__(self, string):
-        self.abbreviation = get_abbreviation(string)
-        self.string = string
+        self.abbreviation, self.string = get_abbreviation(string)
 
     def as_dict(self):
         return {c.name: getattr(self, c.name)
@@ -384,8 +383,7 @@ class BG_abbreviation(Base):
     string = Column(String(20))
 
     def __init__(self, string):
-        self.abbreviation = get_abbreviation(string)
-        self.string = string
+        self.abbreviation, self.string = get_abbreviation(string)
 
     def as_dict(self):
         return {c.name: getattr(self, c.name)
@@ -443,18 +441,24 @@ def get_abbreviation(string):
 
     if string in weird_abb.keys():
         abbreviation = weird_abb[string]
+        string_cp = string
 
     # we check for number of upper letters instead of spaces because some
     # morgues are weird -> Chaos Knight as ChaosKnight -.-
     elif sum(1 for c in string if c.isupper()) == 1:
         abbreviation = string[:2]
+        string_cp = string
     else:
         abbreviation = string[0]
+        string_cp = string[0]
         for c in string[1:]:
             if c.isupper():
                 abbreviation += c
+                string_cp += " " + c
+            elif c != " ":
+                string_cp += c
 
-    return abbreviation
+    return abbreviation, string_cp
 
 
 def get_branch_abbreviation(branch_string):

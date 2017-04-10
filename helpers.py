@@ -88,7 +88,7 @@ def load_morgues_to_db(n=0):
     for dirpath, dirnames, filenames in walk("morgues"):
         for filename in [f for f in filenames if f.endswith(".txt")]:
 
-            #if n morgues added, end
+            # if n morgues added, end
             if i >= n and n > 0:
                 print("{} morgues loaded".format(i))
                 db_session.commit()
@@ -123,25 +123,20 @@ def search(q):
 
     q: string to be searched for."""
 
-
     # add results from abbreviations and full strings
-    if len(q) <= 2:
-        results = Race_abbreviation.query.filter(
-            Race_abbreviation.abbreviation.ilike(q + "%")
-            ).all()
-        results += BG_abbreviation.query.filter(
-            BG_abbreviation.abbreviation.ilike(q + "%")
-            ).all()
-    else:
+    results = Race_abbreviation.query.filter(
+        Race_abbreviation.abbreviation.ilike(q + "%")
+        ).all()
+    results += BG_abbreviation.query.filter(
+        BG_abbreviation.abbreviation.ilike(q + "%")
+        ).all()
+    if len(q) > 2:
         results += BG_abbreviation.query.filter(
             BG_abbreviation.string.ilike(q + "%")
             ).all()
         results += Race_abbreviation.query.filter(
             Race_abbreviation.string.ilike(q + "%")
             ).all()
-
-    for r in results:
-        print(r.abbreviation)
 
     # eliminate duplicates and convert to list of dicts
     results = [r.as_dict() for r in set(results)]
@@ -156,6 +151,7 @@ def search(q):
             BG_abbreviation.abbreviation.ilike(q[2:] + "%")
             ).all()
 
+        # as there is not a bg+race table we create an .as_dict object
         if race and bg:
             for i in bg:
                 r = {
@@ -169,6 +165,10 @@ def search(q):
 
 
 def searchGods(q):
+    """Returns json object ready for typeahead with search results from DB for
+    god filter.
+
+    q: string to be searched for."""
     results = Morgue.query.filter(
         Morgue.god.ilike(q + "%")
         ).distinct(Morgue.god).all()
@@ -179,6 +179,10 @@ def searchGods(q):
 
 
 def searchPlayers(q):
+    """Returns json object ready for typeahead with search results from DB for
+    player filter.
+
+    q: string to be searched for."""
     results = Morgue.query.filter(
         Morgue.name.ilike(q + "%")
         ).distinct(Morgue.name).all()
@@ -189,6 +193,13 @@ def searchPlayers(q):
 
 
 def stats(**kwargs):
+    """Returns json object with stats.
+
+    kwargs: filters to be applied, valid values are:
+        abbreviation, god, name, success, runes, version"""
+
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~ CACHE MANAGEMENT
+    # create string with all kwargs
     keys = list(kwargs.keys())
     keys.sort()
     request = "?"
@@ -211,56 +222,85 @@ def stats(**kwargs):
         stat = StatRequest(request=request)
         db_session.add(stat)
         db_session.commit()
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~ END OF CACHE MANAGEMENT
 
-    results = {}
+    results = {}  # dictionary in which the stats will be appended
+
+    # we will be using Morgue.query for some cases and db_session.query()
+    # in other cases, as even though Morgue.query is more legible, you can't
+    # use sqlalchemy.func
     morgues = Morgue.query
-    case = None
-    db_filter = ""
-    t = time()
+    case = None  # will be used to know which type of abbreviation was passed
+    db_filter = ""  # will be appended to form a SQL filter
+
+    if DEBUG:
+        t = time()
+        t_tot = time()
+
     if "abbreviation" in kwargs:
         abv = kwargs["abbreviation"][0]
-        # check if q is an abbreviation
         if len(abv) == 2:
             # check if abv is a race
             if morgues.filter(Race_abbreviation.abbreviation == abv).first():
                 id = Race_abbreviation.query.filter(
-                    Race_abbreviation.abbreviation == abv).first().id
-                morgues = morgues.filter(
-                    Morgue.race_id == id)
+                    Race_abbreviation.abbreviation == abv).first()
+                if id:
+                    id = id.id
 
-                if db_filter:
-                    db_filter += " AND morgues.race_id = {}".format(id)
-                else:
-                    db_filter += "morgues.race_id = {}".format(id)
-                case = "race"
+                    morgues = morgues.filter(
+                        Morgue.race_id == id)
+
+                    if db_filter:
+                        db_filter += " AND morgues.race_id = {}".format(id)
+                    else:
+                        db_filter += "morgues.race_id = {}".format(id)
+                    case = "race"
 
             # check if abv is a background
             elif morgues.filter(BG_abbreviation.abbreviation == abv).first():
                 id = BG_abbreviation.query.filter(
-                    BG_abbreviation.abbreviation == abv).first().id
-                morgues = morgues.filter(
-                    Morgue.background_id == id)
+                    BG_abbreviation.abbreviation == abv).first()
+                if id:
+                    id = id.id
 
-                if db_filter:
-                    db_filter += " AND morgues.background_id = {}".format(id)
-                else:
-                    db_filter += "morgues.background_id = {}".format(id)
-                case = "bg"
+                    morgues = morgues.filter(
+                        Morgue.background_id == id)
+
+                    if db_filter:
+                        db_filter += " AND morgues.background_id = {}"\
+                            .format(id)
+                    else:
+                        db_filter += "morgues.background_id = {}".format(id)
+                    case = "bg"
 
         elif len(abv) == 4:
+            # check if abv is a combo
             bg_id = BG_abbreviation.query.filter(
-                BG_abbreviation.abbreviation == abv[2:]).first().id
+                BG_abbreviation.abbreviation == abv[2:]).first()
             race_id = Race_abbreviation.query.filter(
-                Race_abbreviation.abbreviation == abv[:2]).first().id
-            morgues = morgues.filter(
-                (Morgue.race_id == race_id) &
-                (Morgue.background_id == bg_id))
+                Race_abbreviation.abbreviation == abv[:2]).first()
 
-            if db_filter:
-                db_filter += " AND morgues.race_id = {} AND morgues.background_id = {}".format(race_id, bg_id)
-            else:
-                db_filter += "morgues.race_id = {} AND morgues.background_id = {}".format(race_id, bg_id)
-            case = "combo"
+            if race_id and bg_id:
+                race_id = race_id.id
+                bg_id = bg_id.id
+                morgues = morgues.filter(
+                    (Morgue.race_id == race_id) &
+                    (Morgue.background_id == bg_id))
+
+                if db_filter:
+                    db_filter += " AND morgues.race_id = {}" +\
+                        " AND morgues.background_id = {}"\
+                        .format(race_id, bg_id)
+                else:
+                    db_filter += "morgues.race_id = {}" +\
+                        " AND morgues.background_id = {}"\
+                        .format(race_id, bg_id)
+                case = "combo"
+
+        if not case:
+            # if abv was passed, but it wasnt a race, bg or combo
+            results["ERROR"] = "No results for your query"
+            return jsonify(results)
 
     # apply filters provided in kwargs
     if "god" in kwargs:
@@ -281,7 +321,8 @@ def stats(**kwargs):
         morgues = morgues.filter(Morgue.success == kwargs["success"][0])
 
         if db_filter:
-            db_filter += " AND morgues.success = '{}'".format(kwargs["success"][0])
+            db_filter += " AND morgues.success = '{}'"\
+                .format(kwargs["success"][0])
         else:
             db_filter += "morgues.success = '{}'".format(kwargs["success"][0])
     if "runes" in kwargs:
@@ -298,85 +339,98 @@ def stats(**kwargs):
         morgues = morgues.filter(Morgue.version.ilike(version))
 
         if db_filter:
-            db_filter += " AND morgues.version LIKE '{}%'".format(kwargs["version"][0])
+            db_filter += " AND morgues.version LIKE '{}%'"\
+                .format(kwargs["version"][0])
         else:
-            db_filter += "morgues.version LIKE '{}%'".format(kwargs["version"][0])
+            db_filter += "morgues.version LIKE '{}%'"\
+                .format(kwargs["version"][0])
 
+    # if after applying filters there's no result
     if not morgues.first():
         results["ERROR"] = "No results for your query"
         return jsonify(results)
 
-    # fill results with information about the runs
     if DEBUG:
         print("{} s to filter.".format(time() - t))
         t = time()
 
     # most common branch_order
-    if DEBUG:
-        t = time()
-        t_tot = time()
 
-    print(db_filter)
+    # get the most traveserd branch order
     results["branch_order"] = get_medium_branch_order(
         [morgue.branch_order for morgue in morgues.all()])
-    results["mean_time"] = float(db_session.query(func.avg(Morgue.time)).filter(text(db_filter)).first()[0])
-    results["mean_turns"] = float(db_session.query(func.avg(Morgue.turns)).filter(text(db_filter)).first()[0])
+
+    # calculate a lot of means
+    results["mean_time"] = float(db_session.query(
+        func.avg(Morgue.time)).filter(text(db_filter)).first()[0])
+    results["mean_turns"] = float(db_session.query(
+        func.avg(Morgue.turns)).filter(text(db_filter)).first()[0])
+    results["mean_XL"] = float(db_session.query(
+        func.avg(Morgue.XL)).filter(text(db_filter)).first()[0])
+    results["mean_Str"] = float(db_session.query(
+        func.avg(Morgue.Str)).filter(text(db_filter)).first()[0])
+    results["mean_AC"] = float(db_session.query(
+        func.avg(Morgue.AC)).filter(text(db_filter)).first()[0])
+    results["mean_Int"] = float(db_session.query(
+        func.avg(Morgue.Int)).filter(text(db_filter)).first()[0])
+    results["mean_EV"] = float(db_session.query(
+        func.avg(Morgue.EV)).filter(text(db_filter)).first()[0])
+    results["mean_Dex"] = float(db_session.query(
+        func.avg(Morgue.Dex)).filter(text(db_filter)).first()[0])
+    results["mean_SH"] = float(db_session.query(
+        func.avg(Morgue.SH)).filter(text(db_filter)).first()[0])
+
     results["wins"] = morgues.filter(Morgue.success).count()
     results["games"] = morgues.count()
     results["winrate"] = str(results["wins"] * 100 / results["games"]) + "%"
-    results["mean_XL"] = float(db_session.query(func.avg(Morgue.XL)).filter(text(db_filter)).first()[0])
-    results["mean_Str"] = float(db_session.query(func.avg(Morgue.Str)).filter(text(db_filter)).first()[0])
-    results["mean_AC"] = float(db_session.query(func.avg(Morgue.AC)).filter(text(db_filter)).first()[0])
-    results["mean_Int"] = float(db_session.query(func.avg(Morgue.Int)).filter(text(db_filter)).first()[0])
-    results["mean_EV"] = float(db_session.query(func.avg(Morgue.EV)).filter(text(db_filter)).first()[0])
-    results["mean_Dex"] = float(db_session.query(func.avg(Morgue.Dex)).filter(text(db_filter)).first()[0])
-    results["mean_SH"] = float(db_session.query(func.avg(Morgue.SH)).filter(text(db_filter)).first()[0])
 
     if DEBUG:
         print("{} s to calculate means.".format(time() - t))
         t = time()
-        t2=time()
 
+    # most played god, player, etc...
     if "name" not in kwargs:
-        results["players"] = db_session.query(Morgue.name, func.count(Morgue.name)).filter(text(db_filter)).group_by(Morgue.name).all()
-
-    if DEBUG:
-        print("{} s to calculate name list.".format(time() - t2))
-        t2=time()
+        results["players"] = db_session.query(
+            Morgue.name, func.count(Morgue.name)).filter(
+            text(db_filter)).group_by(Morgue.name).all()
 
     if "god" not in kwargs:
-        gods = {}
-        results["gods"] = db_session.query(Morgue.god, func.count(Morgue.god)).filter(text(db_filter)).group_by(Morgue.god).all()
-
-    if DEBUG:
-        print("{} s to calculate god list.".format(time() - t2))
-        t2=time()
+        results["gods"] = db_session.query(
+            Morgue.god, func.count(Morgue.god)).filter(
+            text(db_filter)).group_by(Morgue.god).all()
 
     if not kwargs.get("success"):
-        results["killers"] = db_session.query(Morgue.killer, func.count(Morgue.killer)).filter(text(db_filter)).group_by(Morgue.killer).all()
+        results["killers"] = db_session.query(
+            Morgue.killer, func.count(Morgue.killer)).filter(
+            text(db_filter)).group_by(Morgue.killer).all()
 
     if case == "bg":
-        # makes a dictionary with every race with its number of appearences
-        races = {}
-        for race in Race_abbreviation.query.all():
-            races[Race_abbreviation.query.filter(
-                Race_abbreviation.id == race.id).first().string] =\
-                morgues.filter(Morgue.race_id == race.id).count()
+        # this generates: [(id, number of appearences)]
+        races = db_session.query(
+            Morgue.race_id, func.count(Morgue.race_id)).filter(
+            text(db_filter)).group_by(Morgue.race_id).all()
+        # we convert to: [(abbreviation, number of appearences)]
+        for i, e in enumerate(races):
+            races[i] = (Race_abbreviation.query.filter(
+                Race_abbreviation.id == e[0]).first().abbreviation, e[1])
+
         results["races"] = races
 
     if case == "race":
-        bgs = {}
-        for bg in BG_abbreviation.query.all():
-            bgs[BG_abbreviation.query.filter(
-                BG_abbreviation.id == bg.id).first().string] =\
-                morgues.filter(Morgue.background_id == bg.id).count()
+        # this generates: [(id, number of appearences)]
+        bgs = db_session.query(
+            Morgue.background_id, func.count(Morgue.background_id)).filter(
+            text(db_filter)).group_by(Morgue.background_id).all()
+        # we convert to: [(abbreviation, number of appearences)]
+        for i, e in enumerate(bgs):
+            bgs[i] = (BG_abbreviation.query.filter(
+                BG_abbreviation.id == e[0]).first().abbreviation, e[1])
+
         results["bgs"] = bgs
 
     if DEBUG:
-        print("{} s to calculate killer list.".format(time() - t2))
         print("{} s to obtain name, god and killer lists.".format(time() - t))
         print("{} s in total.".format(time() - t_tot))
-
 
     update_cached(stat, results)
     return jsonify(results)
