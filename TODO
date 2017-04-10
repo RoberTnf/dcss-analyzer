@@ -1,0 +1,3 @@
+1.- redo the load_morgue function to avoid constants checks to DB, just one and then check array (should be faster, but time it)
+2.- in stats, recreate, as query.session does not work as i thought
+3.- comments, clean code
