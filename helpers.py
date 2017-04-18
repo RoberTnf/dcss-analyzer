@@ -1,9 +1,10 @@
 #!/usr/bin/env python
+
 import urllib.request
 import re
 import os
 import sys
-import numpy as np
+# import numpy as np
 
 from bs4 import BeautifulSoup
 from models import Morgue, BG_abbreviation, Race_abbreviation, StatRequest
@@ -363,27 +364,28 @@ def stats(**kwargs):
         [morgue.branch_order for morgue in morgues.all()])
 
     # calculate a lot of means
-    results["mean_time"] = float(db_session.query(
-        func.avg(Morgue.time)).filter(text(db_filter)).first()[0])
-    results["mean_turns"] = float(db_session.query(
-        func.avg(Morgue.turns)).filter(text(db_filter)).first()[0])
-    results["mean_XL"] = float(db_session.query(
-        func.avg(Morgue.XL)).filter(text(db_filter)).first()[0])
-    results["mean_Str"] = float(db_session.query(
-        func.avg(Morgue.Str)).filter(text(db_filter)).first()[0])
-    results["mean_AC"] = float(db_session.query(
-        func.avg(Morgue.AC)).filter(text(db_filter)).first()[0])
-    results["mean_Int"] = float(db_session.query(
-        func.avg(Morgue.Int)).filter(text(db_filter)).first()[0])
-    results["mean_EV"] = float(db_session.query(
-        func.avg(Morgue.EV)).filter(text(db_filter)).first()[0])
-    results["mean_Dex"] = float(db_session.query(
-        func.avg(Morgue.Dex)).filter(text(db_filter)).first()[0])
-    results["mean_SH"] = float(db_session.query(
-        func.avg(Morgue.SH)).filter(text(db_filter)).first()[0])
+    results["mean_time"] = round(float(db_session.query(
+        func.avg(Morgue.time)).filter(text(db_filter)).first()[0])/3600, 2)
+    results["mean_turns"] = round(float(db_session.query(
+        func.avg(Morgue.turns)).filter(text(db_filter)).first()[0]), 2)
+    results["mean_XL"] = round(float(db_session.query(
+        func.avg(Morgue.XL)).filter(text(db_filter)).first()[0]), 2)
+    results["mean_Str"] = round(float(db_session.query(
+        func.avg(Morgue.Str)).filter(text(db_filter)).first()[0]), 2)
+    results["mean_AC"] = round(float(db_session.query(
+        func.avg(Morgue.AC)).filter(text(db_filter)).first()[0]), 2)
+    results["mean_Int"] = round(float(db_session.query(
+        func.avg(Morgue.Int)).filter(text(db_filter)).first()[0]), 2)
+    results["mean_EV"] = round(float(db_session.query(
+        func.avg(Morgue.EV)).filter(text(db_filter)).first()[0]), 2)
+    results["mean_Dex"] = round(float(db_session.query(
+        func.avg(Morgue.Dex)).filter(text(db_filter)).first()[0]), 2)
+    results["mean_SH"] = round(float(db_session.query(
+        func.avg(Morgue.SH)).filter(text(db_filter)).first()[0]), 2)
+
+    results["games"] = morgues.count()
 
     results["wins"] = morgues.filter(Morgue.success).count()
-    results["games"] = morgues.count()
     results["winrate"] = str(results["wins"] * 100 / results["games"]) + "%"
 
     if DEBUG:
@@ -408,7 +410,7 @@ def stats(**kwargs):
             Morgue.killer, func.count(Morgue.killer)).filter(
             text(db_filter)).group_by(Morgue.killer).all()
 
-    if case != "race":
+    if case != "race" and case != "combo":
         # this generates: [(id, number of appearences)]
         races = db_session.query(
             Morgue.race_id, func.count(Morgue.race_id)).filter(
@@ -420,7 +422,7 @@ def stats(**kwargs):
 
         results["races"] = races
 
-    if case != "bg":
+    if case != "bg" and case != "combo":
         # this generates: [(id, number of appearences)]
         bgs = db_session.query(
             Morgue.background_id, func.count(Morgue.background_id)).filter(
@@ -505,7 +507,7 @@ if len(sys.argv) == 2:
                    {"url": "https://crawl.project357.org/morgue/",
                     "folder": "crawl-project357/"},
                    {"url": "http://crawl.berotato.org/crawl/morgue/",
-                    "folder": "crawl-berotato/"},]
+                    "folder": "crawl-berotato/"}, ]
 
         for server in servers:
             download_morgues(server["url"], server["folder"])

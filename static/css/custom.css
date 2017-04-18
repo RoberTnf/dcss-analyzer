@@ -128,3 +128,29 @@
     margin:auto;
     display:none;
 }
+
+#players .graph-container{
+    padding-top: 10px;
+}
+
+#stats .statTable{
+    padding-top: 10px;
+}
+
+table {
+    border-collapse: collapse;
+}
+
+table, th, td {
+    width:50%;
+    margin-left:auto;
+    margin-right:auto;
+    border: 1px solid #ddd;
+    text-align:left;
+    padding:10px;
+}
+tr:nth-child(even){background-color: #f2f2f2}
+th {
+    background-color: #AAAAFF;
+    color: black;
+}

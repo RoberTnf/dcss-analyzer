@@ -206,7 +206,7 @@ function display_stats(data, statStr) {
         $("#winrate").append("<h3 class=sectionTitle> Games: </h3>")
         // add div for graph
         $("#winrate").append("<div class=sectionText></div>")
-        winrateStr = "In {0} games {1} were victories (<b>{2}%</b> winrate).".f(
+        winrateStr = "In {0} games {1} were victories <br> (<b>{2}%</b> winrate).".f(
             data.games, data.wins, data.winrate.slice(0,5)
         )
         $("#winrate .sectionText").append(winrateStr)
@@ -237,7 +237,7 @@ function display_stats(data, statStr) {
                 max.god=item[0]
             };
         });
-        godsStr = "The most played god is <b>{0}</b> with {1} games (<b>{2}%</b>)".f(
+        godsStr = "The most played god is <b>{0}</b> <br>with {1} games (<b>{2}%</b>)".f(
             max.god, max.count, (max.count*100/total).toString().slice(0,5)
         )
         $("#gods .sectionText").append(godsStr)
@@ -265,7 +265,7 @@ function display_stats(data, statStr) {
                 max.god=item[0]
             };
         });
-        killersStr = "The monster with most kills is <b>{0}</b> with {1} kills (<b>{2}%</b>)".f(
+        killersStr = "The monster with most kills is <b>{0}</b> <br>with {1} kills (<b>{2}%</b>)".f(
             max.god, max.count, (max.count*100/total).toString().slice(0,5)
         )
         $("#killers .sectionText").append(killersStr)
@@ -299,7 +299,7 @@ function display_stats(data, statStr) {
             }
             total += item[1];
         });
-        uniqueKillersStr = "The unique with most kills is <b>{0}</b> with {1} kills (<b>{2}%</b> of totals)".f(
+        uniqueKillersStr = "The unique with most kills is <b>{0}</b> <br>with {1} kills (<b>{2}%</b> of totals)".f(
             max.killer, max.count, (max.count*100/total).toString().slice(0,5)
         )
         $("#uniqueKillers .sectionText").append(uniqueKillersStr)
@@ -327,7 +327,7 @@ function display_stats(data, statStr) {
                 max.race=item[0]
             };
         });
-        RacesStr = "The most played race is <b>{0}</b> with {1} games (<b>{2}%</b> of totals).".f(
+        RacesStr = "The most played race is <b>{0}</b> <br>with {1} games (<b>{2}%</b> of totals).".f(
             max.race, max.count, (max.count*100/total).toString().slice(0,5)
         )
         $("#Races .sectionText").append(RacesStr)
@@ -355,7 +355,7 @@ function display_stats(data, statStr) {
                 max.bg=item[0]
             };
         });
-        bgsStr = "The most played background is <b>{0}</b> with {1} games (<b>{2}%</b> of totals).".f(
+        bgsStr = "The most played background is <b>{0}</b> <br>with {1} games (<b>{2}%</b> of totals).".f(
             max.bg, max.count, (max.count*100/total).toString().slice(0,5)
         )
         $("#bgs .sectionText").append(bgsStr)
@@ -369,7 +369,7 @@ function display_stats(data, statStr) {
     if (hasOwnProperty(data, "players"))
     {
         $("#main-wrapper").append("<div class=statSection id=players></div>")
-        $("#players").append("<h3 class=sectionTitle> Top 10 players: </h3>")
+        $("#players").append("<h3 class=sectionTitle> Top 5 players: </h3>")
         // add div for graph
         $("#players").append("<div class=sectionText></div>")
         var Points = [];
@@ -377,8 +377,8 @@ function display_stats(data, statStr) {
         var max = {"player":"none", "count":0};
         var total = 0;
         $.each(data.players, function(i, item){
-            if (j < 10) {
-                Points.push({data: item[1], label: item[0]});
+            if (j < 5) {
+                Points.push([item[0], item[1]]);
                 if (j == 0) {
                     max.count=item[1]
                     max.player=item[0]
@@ -387,16 +387,44 @@ function display_stats(data, statStr) {
             total += item[1];
             j++;
         });
-        playersStr = "The player with most games is <b>{0}</b> with {1} games (<b>{2}%</b> of totals).".f(
+        playersStr = "The player with most games is <b>{0}</b> <br>with {1} games (<b>{2}%</b> of totals).".f(
             max.player, max.count, (max.count*100/total).toString().slice(0,5)
         )
         $("#players .sectionText").append(playersStr)
         $("#players").append('<div class="graph-container"></div>');
         $("#players .graph-container").append('<div class="graph"></div>')
         $("#players .graph-container").append('<div class="graph-memo"></div>')
-        $.plot("#players .graph", Points, options);
+        bar_options = {
+			series: {
+				bars: {
+					show: true,
+					barWidth: 0.6,
+					align: "center"
+				}
+			},
+			xaxis: {
+				mode: "categories",
+				tickLength: 0
+			}
+		}
+        $.plot("#players .graph", [Points], bar_options);
         $("#players .graph").showMemo("#players .graph-memo");
     }
+
+    $("#main-wrapper").append("<div class=statSection id=stats></div>")
+    $("#stats").append("<h3 class=sectionTitle> Mean Stats: </h3>")
+    statsHTML = '<div class="statTable"><table>'
+    statsHTML += '<tr><td>XL</td><td>{0}</td>'.f(data.mean_XL)
+    statsHTML += '<tr><td>Str</td><td>{0}</td>'.f(data.mean_Str)
+    statsHTML += '<tr><td>Int</td><td>{0}</td>'.f(data.mean_Int)
+    statsHTML += '<tr><td>Dex</td><td>{0}</td>'.f(data.mean_Dex)
+    statsHTML += '<tr><td>AC</td><td>{0}</td>'.f(data.mean_AC)
+    statsHTML += '<tr><td>EV</td><td>{0}</td>'.f(data.mean_EV)
+    statsHTML += '<tr><td>SH</td><td>{0}</td>'.f(data.mean_SH)
+    statsHTML += '<tr><td>Time</td><td>{0} hours</td>'.f(data.mean_time)
+    statsHTML += '<tr><td>Turns</td><td>{0}</td>'.f(data.mean_turns)
+    statsHTML += '</table></div>'
+    $("#stats").append(statsHTML)
 }
 
 

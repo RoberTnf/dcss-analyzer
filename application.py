@@ -11,6 +11,7 @@ app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///database.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
 
+
 @app.route('/')
 def index():
     return flask.render_template("index.html")
@@ -36,10 +37,12 @@ def search():
     q = flask.request.args.get("q")
     return helpers.search(q)
 
+
 @app.route("/searchGods")
 def searchGods():
     q = flask.request.args.get("q")
     return helpers.searchGods(q)
+
 
 @app.route("/searchPlayers")
 def searchPlayers():
