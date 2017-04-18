@@ -21,10 +21,11 @@ DEBUG = True
 N_TO_CACHE = 100
 
 
-def download_morgues(base_url, base_folder="morgues"):
+def download_morgues(base_url, base_folder):
     """Downloads morgues from base_url into base_folder"""
 
     # get links to each user morgue's folder
+    base_folder = "morgues/" + base_folder
     if DEBUG:
         print("Indexing each user morgue's folder for {}".format(base_url))
     resp_base = urllib.request.urlopen(base_url)
@@ -35,7 +36,8 @@ def download_morgues(base_url, base_folder="morgues"):
     # get links to each morgue for user
     for user in soup_base.find_all('a', href=True):
         # avoid the parent directory link and the order links
-        if user["href"] != "/crawl/" and user["href"][0] != "?":
+        if user["href"] != "/crawl/" and user["href"][0] != "?" and\
+                user["href"] != "../" or "morgue" in user["href"]:
             if DEBUG:
                 print("\n\nIndexing {} morgue's folder".format(user["href"]))
                 print("Link : {}".format(base_url + user["href"]))
@@ -96,7 +98,7 @@ def load_morgues_to_db(n=0):
 
             # add only if not already in db
             if not (filename,) in db_morgues:
-                run = Morgue(join(dirpath, filename))
+                run = Morgue(join(dirpath, filename), dirpath.split("/")[1])
                 if run.crawl and run.time:
                     db_session.add(run)
                 i += 1
@@ -288,12 +290,12 @@ def stats(**kwargs):
                     (Morgue.background_id == bg_id))
 
                 if db_filter:
-                    db_filter += " AND morgues.race_id = {}" +\
-                        " AND morgues.background_id = {}"\
+                    db_filter += " AND morgues.race_id = {}\
+                        AND morgues.background_id = {}"\
                         .format(race_id, bg_id)
                 else:
-                    db_filter += "morgues.race_id = {}" +\
-                        " AND morgues.background_id = {}"\
+                    db_filter += "morgues.race_id = {}\
+                         AND morgues.background_id = {}"\
                         .format(race_id, bg_id)
                 case = "combo"
 
@@ -390,9 +392,11 @@ def stats(**kwargs):
 
     # most played god, player, etc...
     if "name" not in kwargs:
+        # Only top 100 players, as more won't be nicelly graphed
         results["players"] = db_session.query(
-            Morgue.name, func.count(Morgue.name)).filter(
-            text(db_filter)).group_by(Morgue.name).all()
+            Morgue.name, func.count(Morgue.name).label("c")).filter(
+            text(db_filter)).group_by(Morgue.name).order_by("c DESC")\
+            .all()
 
     if "god" not in kwargs:
         results["gods"] = db_session.query(
@@ -404,7 +408,7 @@ def stats(**kwargs):
             Morgue.killer, func.count(Morgue.killer)).filter(
             text(db_filter)).group_by(Morgue.killer).all()
 
-    if case == "bg":
+    if case != "race":
         # this generates: [(id, number of appearences)]
         races = db_session.query(
             Morgue.race_id, func.count(Morgue.race_id)).filter(
@@ -416,7 +420,7 @@ def stats(**kwargs):
 
         results["races"] = races
 
-    if case == "race":
+    if case != "bg":
         # this generates: [(id, number of appearences)]
         bgs = db_session.query(
             Morgue.background_id, func.count(Morgue.background_id)).filter(
@@ -496,6 +500,12 @@ def get_medium_branch_order(branch_orders):
 
 if len(sys.argv) == 2:
     if sys.argv[1] == "download":
-        url = "http://crawl.xtahua.com/crawl/morgue/"
-        folder = "morgues/crawl-xtahua/"
-        download_morgues(url, folder)
+        servers = [{"url": "http://crawl.xtahua.com/crawl/morgue/",
+                    "folder": "crawl-xtahua/"},
+                   {"url": "https://crawl.project357.org/morgue/",
+                    "folder": "crawl-project357/"},
+                   {"url": "http://crawl.berotato.org/crawl/morgue/",
+                    "folder": "crawl-berotato/"},]
+
+        for server in servers:
+            download_morgues(server["url"], server["folder"])

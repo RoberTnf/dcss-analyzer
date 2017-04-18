@@ -57,7 +57,7 @@ class Morgue(Base):
     background_id = Column(Integer, ForeignKey("bg_abbreviations.id"))
     background = relationship("BG_abbreviation")
 
-    def __init__(self, filename):
+    def __init__(self, filename, server):
         self.version = None
         self.name = None
         self.time = None
@@ -80,6 +80,7 @@ class Morgue(Base):
         self.race = None
         self.background = None
         self.crawl = True
+        self.server = server
 
         version_regex = re.compile("version ([0-9A-Za-z\.\-]+)")
         name_regex = re.compile("(\d+ )(\w+)( the)")
@@ -141,7 +142,7 @@ class Morgue(Base):
                             race_background(found.group(1))
 
                         race_abv, race_str = get_abbreviation(
-                            background_string)
+                            race_string)
                         self.race = Race_abbreviation.query.filter_by(
                             string=race_str).first()
                         if not self.race:

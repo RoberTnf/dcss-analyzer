@@ -227,7 +227,6 @@ function display_stats(data, statStr) {
         // add div for graph
         $("#gods").append("<div class=sectionText></div>")
         var Points = [];
-        var j = 0;
         var max = {"god":"none", "count":0};
         var total = 0;
         $.each(data.gods, function(i, item){
@@ -256,7 +255,6 @@ function display_stats(data, statStr) {
         // add div for graph
         $("#killers").append("<div class=sectionText></div>")
         var Points = [];
-        var j = 0;
         var max = {"god":"none", "count":0};
         var total = 0;
         $.each(data.killers, function(i, item){
@@ -285,7 +283,6 @@ function display_stats(data, statStr) {
         // add div for graph
         $("#uniqueKillers").append("<div class=sectionText></div>")
         var Points = [];
-        var j = 0;
         var max = {"killer":"none", "count":0};
         var total = 0;
         var total_uniques = 0;
@@ -320,10 +317,9 @@ function display_stats(data, statStr) {
         // add div for graph
         $("#Races").append("<div class=sectionText></div>")
         var Points = [];
-        var j = 0;
         var max = {"race":"none", "count":0};
         var total = 0;
-        $.each(data.Races, function(i, item){
+        $.each(data.races, function(i, item){
             Points.push({data: item[1], label: item[0]});
             total += item[1];
             if (max.count < item[1]) {
@@ -340,6 +336,66 @@ function display_stats(data, statStr) {
         $("#Races .graph-container").append('<div class="graph-memo"></div>')
         $.plot("#Races .graph", Points, options);
         $("#Races .graph").showMemo("#Races .graph-memo");
+    }
+
+    if (hasOwnProperty(data, "bgs"))
+    {
+        $("#main-wrapper").append("<div class=statSection id=bgs></div>")
+        $("#bgs").append("<h3 class=sectionTitle> Backgrounds: </h3>")
+        // add div for graph
+        $("#bgs").append("<div class=sectionText></div>")
+        var Points = [];
+        var max = {"bg":"none", "count":0};
+        var total = 0;
+        $.each(data.bgs, function(i, item){
+            Points.push({data: item[1], label: item[0]});
+            total += item[1];
+            if (max.count < item[1]) {
+                max.count=item[1]
+                max.bg=item[0]
+            };
+        });
+        bgsStr = "The most played background is <b>{0}</b> with {1} games (<b>{2}%</b> of totals).".f(
+            max.bg, max.count, (max.count*100/total).toString().slice(0,5)
+        )
+        $("#bgs .sectionText").append(bgsStr)
+        $("#bgs").append('<div class="graph-container"></div>');
+        $("#bgs .graph-container").append('<div class="graph"></div>')
+        $("#bgs .graph-container").append('<div class="graph-memo"></div>')
+        $.plot("#bgs .graph", Points, options);
+        $("#bgs .graph").showMemo("#bgs .graph-memo");
+    }
+
+    if (hasOwnProperty(data, "players"))
+    {
+        $("#main-wrapper").append("<div class=statSection id=players></div>")
+        $("#players").append("<h3 class=sectionTitle> Top 10 players: </h3>")
+        // add div for graph
+        $("#players").append("<div class=sectionText></div>")
+        var Points = [];
+        var j = 0;
+        var max = {"player":"none", "count":0};
+        var total = 0;
+        $.each(data.players, function(i, item){
+            if (j < 10) {
+                Points.push({data: item[1], label: item[0]});
+                if (j == 0) {
+                    max.count=item[1]
+                    max.player=item[0]
+                };
+            }
+            total += item[1];
+            j++;
+        });
+        playersStr = "The player with most games is <b>{0}</b> with {1} games (<b>{2}%</b> of totals).".f(
+            max.player, max.count, (max.count*100/total).toString().slice(0,5)
+        )
+        $("#players .sectionText").append(playersStr)
+        $("#players").append('<div class="graph-container"></div>');
+        $("#players .graph-container").append('<div class="graph"></div>')
+        $("#players .graph-container").append('<div class="graph-memo"></div>')
+        $.plot("#players .graph", Points, options);
+        $("#players .graph").showMemo("#players .graph-memo");
     }
 }
 
