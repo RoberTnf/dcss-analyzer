@@ -38,6 +38,18 @@ def search():
     return helpers.search(q)
 
 
+@app.route("/searchGods")
+def searchGods():
+    q = flask.request.args.get("q")
+    return helpers.searchGods(q)
+
+
+@app.route("/searchPlayers")
+def searchPlayers():
+    q = flask.request.args.get("q")
+    return helpers.searchPlayers(q)
+
+
 def apology(text):
     return flask.render_template("apology.html", text=text)
 

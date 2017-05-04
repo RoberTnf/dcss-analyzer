@@ -1,3 +1,4 @@
+bower_components
 morgues
 tmp
 __pycache__
@@ -6,3 +7,5 @@ test.py
 .idea
 cached
 database.py
+node_modules
+bck

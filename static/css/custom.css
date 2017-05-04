@@ -1,10 +1,17 @@
+.filterText {
+    font-size: 22px;
+    color: #fff;
+    font-weight: 500;
+}
+
 #search .typeahead
 {
     /* override typeahead.js's transparent background */
     background-color: #ffffff !important;
     border-radius: 8px;
     /* text box's width */
-    width: 500px;
+    width: 600px;
+    height: 50px;
 }
 
 .tt-hint {
@@ -51,4 +58,108 @@
 
 .tt-suggestion p {
     margin: 0;
+}
+
+#filterVictory {display:inline-block;margin-right:10px; width:200px;}
+#filterGod {display:inline-block; width:200px;margin-right:20px;}
+#filterName {display:inline-block; width:200px;}
+#filterVersion{display:inline-block; width:200px}
+#filterRunes{display:inline-block; width:200px; margin-right:10px}
+#firstRowFilters{padding-bottom: 10px}
+
+#filter_elements .typeahead
+{
+    /* override typeahead.js's transparent background */
+    background-color: #ffffff !important;
+    border-radius: 8px;
+    /* text box's width */
+    width: 200px;
+}
+
+#filter_elements .tt-menu {
+    width: 200px;
+}
+#filterList h2{
+    padding-top: 20px
+}
+
+#filter_list ul{
+    list-style-type: none;
+}
+
+#statStr {
+    padding-bottom: 15px;
+}
+
+#main-wrapper .sectionTitle{
+    padding-top: 15px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid;
+}
+
+#main-wrapper .graph-container{
+    width:40vw;
+    height:40vw;
+    display: table-cell;
+    vertical-align:middle;
+    border-left: 1px solid;
+}
+
+#main-wrapper .graph {
+    height:80%;
+    margin: auto;
+}
+
+#main-wrapper .graph-memo {
+    text-align:center;
+    width:250px;
+    height:20px;
+    text-align:center;
+    margin: auto;
+}
+
+#main-wrapper .sectionText{
+    display: table-cell;
+    color: #000;
+    vertical-align: middle;
+    padding: 20px;
+}
+
+#loader-gif {
+    padding-top: 10px;
+    height:50px;
+    width:50px;
+    margin:auto;
+    display:none;
+}
+
+
+#stats .statTable{
+    padding-top: 10px;
+}
+
+table {
+    border-collapse: collapse;
+}
+
+table, th, td {
+    width:50%;
+    margin-left:auto;
+    margin-right:auto;
+    border: 1px solid #ddd;
+    text-align:left;
+    padding:10px;
+}
+tr:nth-child(even){background-color: #f2f2f2}
+th {
+    background-color: #AAAAFF;
+    color: black;
+}
+
+.statSection {
+    background-color: #edefe8;
+    width: 80%;
+    margin: auto;
+    border-style: solid;
+    border-width: 1px;
 }
