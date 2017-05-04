@@ -212,7 +212,7 @@ function display_stats(data, statStr) {
         $("#winrate .sectionText").append(winrateStr)
         $("#winrate").append('<div class="graph-container"></div>');
         $("#winrate .graph-container").append('<div class="graph"></div>')
-        $("#winrate .graph-container").append('<div class="graph-memo"></div>')
+        $("#winrate .graph-container").append('<div class="graph-memo">')
         var Points = [];
         Points.push({data: data.wins, label: "wins"});
         Points.push({data: data.games - data.wins, label: "loses"});
@@ -427,7 +427,7 @@ function display_stats(data, statStr) {
     $("#stats").append(statsHTML)
 }
 
-
+8
 function search(query, syncResults, asyncResults) {
     // get results
     var parameters = {

@@ -93,18 +93,21 @@
 
 #main-wrapper .sectionTitle{
     padding-top: 15px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid;
 }
 
 #main-wrapper .graph-container{
-    width:40%;
-    height:400px;
-    display: inline-block;
+    width:40vw;
+    height:40vw;
+    display: table-cell;
     vertical-align:middle;
+    border-left: 1px solid;
 }
 
 #main-wrapper .graph {
-    width:40%px;
-    height:380px;
+    height:80%;
+    margin: auto;
 }
 
 #main-wrapper .graph-memo {
@@ -112,13 +115,14 @@
     width:250px;
     height:20px;
     text-align:center;
-    margin:0 auto;
+    margin: auto;
 }
 
 #main-wrapper .sectionText{
-    display: inline-block;
-    vertical-align:middle;
+    display: table-cell;
     color: #000;
+    vertical-align: middle;
+    padding: 20px;
 }
 
 #loader-gif {
@@ -129,9 +133,6 @@
     display:none;
 }
 
-#players .graph-container{
-    padding-top: 10px;
-}
 
 #stats .statTable{
     padding-top: 10px;
@@ -153,4 +154,12 @@ tr:nth-child(even){background-color: #f2f2f2}
 th {
     background-color: #AAAAFF;
     color: black;
+}
+
+.statSection {
+    background-color: #edefe8;
+    width: 80%;
+    margin: auto;
+    border-style: solid;
+    border-width: 1px;
 }
