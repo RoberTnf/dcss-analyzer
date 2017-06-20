@@ -6,7 +6,7 @@ database.db
 test.py
 .idea
 cached
-database.py
+database.py.*
 node_modules
 bck
 
