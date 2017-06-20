@@ -1,21 +1,21 @@
 #!/usr/bin/env python
 
-import urllib.request
-import re
 import os
+import re
 import sys
-# import numpy as np
+import urllib.request
+from os import listdir, remove, walk
+from os.path import isfile, join
+from time import time
 
 from bs4 import BeautifulSoup
-from models import Morgue, BG_abbreviation, Race_abbreviation, StatRequest
 from database import db_session, init_db
-from flask import jsonify, json
-from time import time
-from os import walk, remove, listdir
-from os.path import join, isfile
+from flask import json, jsonify
+from models import BG_abbreviation, Morgue, Race_abbreviation, StatRequest
 from sqlalchemy import text
 from sqlalchemy.sql import func
 
+# import numpy as np
 
 # global variables
 DEBUG = True
@@ -31,8 +31,7 @@ def download_morgues(base_url, base_folder):
         print("Indexing each user morgue's folder for {}".format(base_url))
     resp_base = urllib.request.urlopen(base_url)
     soup_base = BeautifulSoup(
-        resp_base, "lxml",
-        from_encoding=resp_base.info().get_param('charset'))
+        resp_base, "lxml", from_encoding=resp_base.info().get_param('charset'))
 
     # get links to each morgue for user
     for user in soup_base.find_all('a', href=True):
@@ -44,7 +43,8 @@ def download_morgues(base_url, base_folder):
                 print("Link : {}".format(base_url + user["href"]))
             resp_user = urllib.request.urlopen(base_url + user["href"])
             soup_user = BeautifulSoup(
-                resp_user, "lxml",
+                resp_user,
+                "lxml",
                 from_encoding=resp_user.info().get_param('charset'))
 
             # create directory for user
@@ -53,16 +53,16 @@ def download_morgues(base_url, base_folder):
                 os.makedirs(directory)
 
             # download each morgue
-            for morgue in re.findall(re.compile(
-                    "morgue.*\.txt"), soup_user.text):
+            for morgue in re.findall(
+                    re.compile("morgue.*\.txt"), soup_user.text):
                 # check if we already downloaded OR if it is already in the DB
                 if not os.path.isfile(directory + morgue) or \
                         not Morgue.query.filter_by(filename=directory+morgue):
                     if DEBUG:
                         print("Downloading {}: ".format(
-                              base_url + user["href"] + morgue))
-                    text = urllib.request.urlopen(
-                        base_url + user["href"] + morgue).read()
+                            base_url + user["href"] + morgue))
+                    text = urllib.request.urlopen(base_url + user["href"] +
+                                                  morgue).read()
                     with open(directory + morgue, "wb") as f:
                         f.write(text)
                 elif DEBUG:
@@ -98,7 +98,7 @@ def load_morgues_to_db(n=0):
                 return
 
             # add only if not already in db
-            if not (filename,) in db_morgues:
+            if not (filename, ) in db_morgues:
                 run = Morgue(join(dirpath, filename), dirpath.split("/")[1])
                 if run.crawl and run.time:
                     db_session.add(run)
@@ -128,18 +128,14 @@ def search(q):
 
     # add results from abbreviations and full strings
     results = Race_abbreviation.query.filter(
-        Race_abbreviation.abbreviation.ilike(q + "%")
-        ).all()
+        Race_abbreviation.abbreviation.ilike(q + "%")).all()
     results += BG_abbreviation.query.filter(
-        BG_abbreviation.abbreviation.ilike(q + "%")
-        ).all()
+        BG_abbreviation.abbreviation.ilike(q + "%")).all()
     if len(q) > 2:
         results += BG_abbreviation.query.filter(
-            BG_abbreviation.string.ilike(q + "%")
-            ).all()
+            BG_abbreviation.string.ilike(q + "%")).all()
         results += Race_abbreviation.query.filter(
-            Race_abbreviation.string.ilike(q + "%")
-            ).all()
+            Race_abbreviation.string.ilike(q + "%")).all()
 
     # eliminate duplicates and convert to list of dicts
     results = [r.as_dict() for r in set(results)]
@@ -147,20 +143,19 @@ def search(q):
     # check for combos
     if len(q) <= 4:
         race = Race_abbreviation.query.filter(
-            Race_abbreviation.abbreviation.ilike(q[:2])
-            ).first()
+            Race_abbreviation.abbreviation.ilike(q[:2])).first()
 
         bg = BG_abbreviation.query.filter(
-            BG_abbreviation.abbreviation.ilike(q[2:] + "%")
-            ).all()
+            BG_abbreviation.abbreviation.ilike(q[2:] + "%")).all()
 
         # as there is not a bg+race table we create an .as_dict object
         if race and bg:
             for i in bg:
                 r = {
-                    "abbreviation": "{}{}"
-                    .format(race.abbreviation, i.abbreviation),
-                    "string": "{} {}".format(race.string, i.string)
+                    "abbreviation":
+                    "{}{}".format(race.abbreviation, i.abbreviation),
+                    "string":
+                    "{} {}".format(race.string, i.string)
                 }
                 results.append(r)
 
@@ -172,9 +167,8 @@ def searchGods(q):
     god filter.
 
     q: string to be searched for."""
-    results = Morgue.query.filter(
-        Morgue.god.ilike(q + "%")
-        ).distinct(Morgue.god).all()
+    results = Morgue.query.filter(Morgue.god.ilike(q + "%")).distinct(
+        Morgue.god).all()
     # eliminate duplicates and convert to list of dicts
     results = [{"suggestion": r.god} for r in set(results)]
 
@@ -186,9 +180,8 @@ def searchPlayers(q):
     player filter.
 
     q: string to be searched for."""
-    results = Morgue.query.filter(
-        Morgue.name.ilike(q + "%")
-        ).distinct(Morgue.name).all()
+    results = Morgue.query.filter(Morgue.name.ilike(q + "%")).distinct(
+        Morgue.name).all()
     # eliminate duplicates and convert to list of dicts
     results = [{"suggestion": r.name} for r in set(results)]
 
@@ -250,8 +243,7 @@ def stats(**kwargs):
                 if id:
                     id = id.id
 
-                    morgues = morgues.filter(
-                        Morgue.race_id == id)
+                    morgues = morgues.filter(Morgue.race_id == id)
 
                     if db_filter:
                         db_filter += " AND morgues.race_id = {}".format(id)
@@ -266,8 +258,7 @@ def stats(**kwargs):
                 if id:
                     id = id.id
 
-                    morgues = morgues.filter(
-                        Morgue.background_id == id)
+                    morgues = morgues.filter(Morgue.background_id == id)
 
                     if db_filter:
                         db_filter += " AND morgues.background_id = {}"\
@@ -286,9 +277,8 @@ def stats(**kwargs):
             if race_id and bg_id:
                 race_id = race_id.id
                 bg_id = bg_id.id
-                morgues = morgues.filter(
-                    (Morgue.race_id == race_id) &
-                    (Morgue.background_id == bg_id))
+                morgues = morgues.filter((Morgue.race_id == race_id) & (
+                    Morgue.background_id == bg_id))
 
                 if db_filter:
                     db_filter += " AND morgues.race_id = {}\
@@ -364,24 +354,42 @@ def stats(**kwargs):
         [morgue.branch_order for morgue in morgues.all()])
 
     # calculate a lot of means
-    results["mean_time"] = round(float(db_session.query(
-        func.avg(Morgue.time)).filter(text(db_filter)).first()[0])/3600, 2)
-    results["mean_turns"] = round(float(db_session.query(
-        func.avg(Morgue.turns)).filter(text(db_filter)).first()[0]), 2)
-    results["mean_XL"] = round(float(db_session.query(
-        func.avg(Morgue.XL)).filter(text(db_filter)).first()[0]), 2)
-    results["mean_Str"] = round(float(db_session.query(
-        func.avg(Morgue.Str)).filter(text(db_filter)).first()[0]), 2)
-    results["mean_AC"] = round(float(db_session.query(
-        func.avg(Morgue.AC)).filter(text(db_filter)).first()[0]), 2)
-    results["mean_Int"] = round(float(db_session.query(
-        func.avg(Morgue.Int)).filter(text(db_filter)).first()[0]), 2)
-    results["mean_EV"] = round(float(db_session.query(
-        func.avg(Morgue.EV)).filter(text(db_filter)).first()[0]), 2)
-    results["mean_Dex"] = round(float(db_session.query(
-        func.avg(Morgue.Dex)).filter(text(db_filter)).first()[0]), 2)
-    results["mean_SH"] = round(float(db_session.query(
-        func.avg(Morgue.SH)).filter(text(db_filter)).first()[0]), 2)
+    results["mean_time"] = round(
+        float(
+            db_session.query(func.avg(Morgue.time)).filter(text(db_filter))
+            .first()[0]) / 3600, 2)
+    results["mean_turns"] = round(
+        float(
+            db_session.query(func.avg(Morgue.turns)).filter(text(db_filter))
+            .first()[0]), 2)
+    results["mean_XL"] = round(
+        float(
+            db_session.query(func.avg(Morgue.XL)).filter(text(db_filter))
+            .first()[0]), 2)
+    results["mean_Str"] = round(
+        float(
+            db_session.query(func.avg(Morgue.Str)).filter(text(db_filter))
+            .first()[0]), 2)
+    results["mean_AC"] = round(
+        float(
+            db_session.query(func.avg(Morgue.AC)).filter(text(db_filter))
+            .first()[0]), 2)
+    results["mean_Int"] = round(
+        float(
+            db_session.query(func.avg(Morgue.Int)).filter(text(db_filter))
+            .first()[0]), 2)
+    results["mean_EV"] = round(
+        float(
+            db_session.query(func.avg(Morgue.EV)).filter(text(db_filter))
+            .first()[0]), 2)
+    results["mean_Dex"] = round(
+        float(
+            db_session.query(func.avg(Morgue.Dex)).filter(text(db_filter))
+            .first()[0]), 2)
+    results["mean_SH"] = round(
+        float(
+            db_session.query(func.avg(Morgue.SH)).filter(text(db_filter))
+            .first()[0]), 2)
 
     results["games"] = morgues.count()
 
@@ -401,24 +409,24 @@ def stats(**kwargs):
             .all()
 
     if "god" not in kwargs:
-        results["gods"] = db_session.query(
-            Morgue.god, func.count(Morgue.god)).filter(
-            text(db_filter)).group_by(Morgue.god).all()
+        results["gods"] = db_session.query(Morgue.god, func.count(
+            Morgue.god)).filter(text(db_filter)).group_by(Morgue.god).all()
 
     if not kwargs.get("success"):
         results["killers"] = db_session.query(
             Morgue.killer, func.count(Morgue.killer)).filter(
-            text(db_filter)).group_by(Morgue.killer).all()
+                text(db_filter)).group_by(Morgue.killer).all()
 
     if case != "race" and case != "combo":
         # this generates: [(id, number of appearences)]
         races = db_session.query(
             Morgue.race_id, func.count(Morgue.race_id)).filter(
-            text(db_filter)).group_by(Morgue.race_id).all()
+                text(db_filter)).group_by(Morgue.race_id).all()
         # we convert to: [(abbreviation, number of appearences)]
         for i, e in enumerate(races):
-            races[i] = (Race_abbreviation.query.filter(
-                Race_abbreviation.id == e[0]).first().abbreviation, e[1])
+            if e[0]:
+                races[i] = (Race_abbreviation.query.filter(
+                    Race_abbreviation.id == e[0]).first().abbreviation, e[1])
 
         results["races"] = races
 
@@ -426,11 +434,12 @@ def stats(**kwargs):
         # this generates: [(id, number of appearences)]
         bgs = db_session.query(
             Morgue.background_id, func.count(Morgue.background_id)).filter(
-            text(db_filter)).group_by(Morgue.background_id).all()
+                text(db_filter)).group_by(Morgue.background_id).all()
         # we convert to: [(abbreviation, number of appearences)]
         for i, e in enumerate(bgs):
-            bgs[i] = (BG_abbreviation.query.filter(
-                BG_abbreviation.id == e[0]).first().abbreviation, e[1])
+            if e[0]:
+                bgs[i] = (BG_abbreviation.query.filter(
+                    BG_abbreviation.id == e[0]).first().abbreviation, e[1])
 
         results["bgs"] = bgs
 
@@ -495,19 +504,27 @@ def get_medium_branch_order(branch_orders):
             most_common_branch += most_common(branchs)
     # only up until Zot, but add zot if not found
     if most_common_branch.find("Z") != -1:
-        return(most_common_branch[:most_common_branch.find("Z") + 1])
+        return (most_common_branch[:most_common_branch.find("Z") + 1])
     else:
-        return(most_common_branch + "Z")
+        return (most_common_branch + "Z")
 
 
 if len(sys.argv) == 2:
     if sys.argv[1] == "download":
-        servers = [{"url": "http://crawl.xtahua.com/crawl/morgue/",
-                    "folder": "crawl-xtahua/"},
-                   {"url": "https://crawl.project357.org/morgue/",
-                    "folder": "crawl-project357/"},
-                   {"url": "http://crawl.berotato.org/crawl/morgue/",
-                    "folder": "crawl-berotato/"}, ]
+        servers = [
+            {
+                "url": "http://crawl.xtahua.com/crawl/morgue/",
+                "folder": "crawl-xtahua/"
+            },
+            {
+                "url": "https://crawl.project357.org/morgue/",
+                "folder": "crawl-project357/"
+            },
+            {
+                "url": "http://crawl.berotato.org/crawl/morgue/",
+                "folder": "crawl-berotato/"
+            },
+        ]
 
         for server in servers:
             download_morgues(server["url"], server["folder"])

@@ -61,11 +61,14 @@
 }
 
 #filterVictory {display:inline-block;margin-right:10px; width:200px;}
-#filterGod {display:inline-block; width:200px;margin-right:20px;}
-#filterName {display:inline-block; width:200px;}
 #filterVersion{display:inline-block; width:200px}
 #filterRunes{display:inline-block; width:200px; margin-right:10px}
 #firstRowFilters{padding-bottom: 10px}
+
+#filterGod {display:inline-block; width:200px;margin-right:10px;}
+#filterName {display:inline-block; width:200px; margin-right:10px;}
+#resetFilters{display:inline-block; width:200px;}
+#resetButton{width:200px}
 
 #filter_elements .typeahead
 {
@@ -94,7 +97,7 @@
 #main-wrapper .sectionTitle{
     padding-top: 15px;
     padding-bottom: 15px;
-    border-bottom: 1px solid;
+    border-bottom: 1px groove;
 }
 
 #main-wrapper .graph-container{
@@ -102,11 +105,11 @@
     height:40vw;
     display: table-cell;
     vertical-align:middle;
-    border-left: 1px solid;
+    border-left: 1px groove;
 }
 
 #main-wrapper .graph {
-    height:80%;
+    height:90%;
     margin: auto;
 }
 
@@ -123,6 +126,7 @@
     color: #000;
     vertical-align: middle;
     padding: 20px;
+    width: 30vw;
 }
 
 #loader-gif {
@@ -160,6 +164,6 @@ th {
     background-color: #edefe8;
     width: 80%;
     margin: auto;
-    border-style: solid;
+    border-style: groove;
     border-width: 1px;
 }

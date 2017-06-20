@@ -1,9 +1,83 @@
-// call when page is ready
+  // call when page is ready Time and space
 $(function() {
     configure()
-
 })
 
+function load_stats(clicked = false) {
+    // parse filters into parameters for /stats
+    if ($("#filter_elements").valid()) {
+        // add interactivity filtering to the graphs
+        if (clicked) {
+            console.log(clicked)
+
+            // Filter for victory
+            if (hasOwnProperty(clicked, "winrate"))
+            {
+                if (clicked["winrate"] == "loses")
+                {
+                    $("#selectVictory").val("Defeats")
+                }
+                if (clicked["winrate"] == "wins")
+                {
+                    $("#selectVictory").val("Victories")
+                }
+            }
+
+            // Filter for gods
+            if (hasOwnProperty(clicked, "god"))
+            {
+                $("#selectGod").val(clicked["god"])
+            }
+        }
+        var parameters = {}
+        var statStr = "Stats for "
+        if($("#selectAbbreviation").val() != null && $("#selectAbbreviation").val() != "") {
+            parameters.abbreviation = $("#selectAbbreviation").val();
+            statStr += parameters.abbreviation;
+        }
+        else {
+            statStr += "every combination"
+        }
+        if ($("#selectVictory").val() == "Victories") {
+            parameters.success = 1;
+            statStr += ", ended in victory";
+        }
+        else if ($("#selectVictory").val() == "Defeats") {
+            parameters.success = 0;
+            statStr += ", ended in defeat";
+        }
+        if ($("#selectRunes").val() != null && $("#selectRunes").val() != "") {
+            parameters.runes = $("#selectRunes").val();
+            statStr += ", with {0} runes".f($("#selectRunes").val());
+        }
+        if ($("#selectGod").val() != null && $("#selectGod").val() != "") {
+            parameters.god = $("#selectGod").val();
+            statStr += ", worshiping {0}".format($("#selectGod").val());
+        }
+        if ($("#selectPlayer").val() != null && $("#selectPlayer").val() != "") {
+            parameters.name = $("#selectPlayer").val();
+            statStr += ", for player {0}".format($("#selectPlayer").val());
+        }
+        if ($("#selectVersion").val() != null && $("#selectVersion").val() != "") {
+            parameters.version = $("#selectVersion").val();
+            statStr += ", under version {0}".f($("#selectVersion").val());
+        }
+        // get results via AJAX and call display_stats
+        $.getJSON(Flask.url_for("stats"), parameters)
+        .done(function(data, textStatus, jqXHR) {
+            $('#main-wrapper').empty();
+            if (hasOwnProperty(data, "ERROR")){
+                display_not_found();
+            }
+            else{
+                display_stats(data, statStr);
+            }
+        })
+        .fail(function(jqXHR, textStatus, errorThrown) {
+            console.log(errorThrown.toString());
+        })
+    }
+}
 
 function configure() {
     // configure main typeahead
@@ -39,59 +113,13 @@ function configure() {
     $("#search .typeahead").on("typeahead:selected", function(eventObject, suggestion, name) {
         $(this).typeahead('val', suggestion.abbreviation);
     });
+
     // selection of main search
-    $(document).keypress(function(e) {if(e.which == 13) {
-        // parse filters into parameters for /stats
-        if ($("#filter_elements").valid()) {
-            var parameters = {}
-            var statStr = "Stats for "
-            if($("#selectAbbreviation").val() != null && $("#selectAbbreviation").val() != "") {
-                parameters.abbreviation = $("#selectAbbreviation").val();
-                statStr += parameters.abbreviation;
-            }
-            else {
-                statStr += "every combination"
-            }
-            if ($("#selectVictory").val() == "Victories") {
-                parameters.success = 1;
-                statStr += ", ended in victory";
-            }
-            else if ($("#selectVictory").val() == "Defeats") {
-                parameters.success = 0;
-                statStr += ", ended in defeat";
-            }
-            if ($("#selectRunes").val() != null && $("#selectRunes").val() != "") {
-                parameters.runes = $("#selectRunes").val();
-                statStr += ", with {0} runes".f($("#selectRunes").val());
-            }
-            if ($("#selectGod").val() != null && $("#selectGod").val() != "") {
-                parameters.god = $("#selectGod").val();
-                statStr += ", worshiping {0}".format($("#selectGod").val());
-            }
-            if ($("#selectPlayer").val() != null && $("#selectPlayer").val() != "") {
-                parameters.name = $("#selectPlayer").val();
-                statStr += ", for player {0}".format($("#selectPlayer").val());
-            }
-            if ($("#selectVersion").val() != null && $("#selectVersion").val() != "") {
-                parameters.version = $("#selectVersion").val();
-                statStr += ", under version {0}".f($("#selectVersion").val());
-            }
-            // get results via AJAX and call display_stats
-            $.getJSON(Flask.url_for("stats"), parameters)
-            .done(function(data, textStatus, jqXHR) {
-                $('#main-wrapper').empty();
-                if (hasOwnProperty(data, "ERROR")){
-                    display_not_found();
-                }
-                else{
-                    display_stats(data, statStr);
-                }
-            })
-            .fail(function(jqXHR, textStatus, errorThrown) {
-                console.log(errorThrown.toString());
-            })
+    $(document).keypress(function(e) {
+        if(e.which == 13) {
+            load_stats()
         }
-    }});
+    });
 
     // initialize tooltipster on form input elements
     $('#filter_elements input[type="text"]').tooltipster({
@@ -170,8 +198,19 @@ function display_stats(data, statStr) {
             show: false
         },
         grid: {
-            hoverable: true
+            hoverable: true,
+            clickable: true
         }
+    }
+
+    $.fn.clickable = function (label) {
+        $(this).bind("plotclick", function (event, pos, item) {
+            if (item) {
+                param = {}
+                param[label] = item["series"]["label"]
+                load_stats(param);
+            }
+        });
     }
 
     // shows info about pie chart
@@ -218,6 +257,7 @@ function display_stats(data, statStr) {
         Points.push({data: data.games - data.wins, label: "loses"});
         $.plot("#winrate .graph", Points, options);
         $("#winrate .graph").showMemo("#winrate .graph-memo");
+        $("#winrate .graph").clickable("winrate")
     }
 
     if (hasOwnProperty(data, "gods"))
@@ -246,6 +286,7 @@ function display_stats(data, statStr) {
         $("#gods .graph-container").append('<div class="graph-memo"></div>')
         $.plot("#gods .graph", Points, options);
         $("#gods .graph").showMemo("#gods .graph-memo");
+        $("#gods .graph").clickable("god")
     }
 
     if (hasOwnProperty(data, "killers"))
