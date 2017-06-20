@@ -3,11 +3,11 @@ from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 import os
 if 'RDS_DB_NAME' in os.environ:
-            db = os.environ['RDS_DB_NAME'],
-            user = os.environ['RDS_USERNAME'],
-            pwd = os.environ['RDS_PASSWORD'],
-            host = os.environ['RDS_HOSTNAME'],
-            port = os.environ['RDS_PORT'],
+            db = os.environ['RDS_DB_NAME']
+            user = os.environ['RDS_USERNAME']
+            pwd = os.environ['RDS_PASSWORD']
+            host = os.environ['RDS_HOSTNAME']
+            port = os.environ['RDS_PORT']
 else:
     user = "kr4n3x"
     pwd = ""
