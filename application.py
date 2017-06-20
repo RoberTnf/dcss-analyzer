@@ -4,7 +4,8 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_jsglue import JSGlue
 from database import db_session
 
-app = flask.Flask(__name__)
+application = flask.Flask(__name__)
+app = application  # AWS
 
 JSGlue(app)
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///database.db"
@@ -63,3 +64,7 @@ def stats():
 @app.teardown_appcontext
 def shutdown_session(Exception=None):
     db_session.remove()
+
+
+if __name__ == "__main__":
+    app.run()
