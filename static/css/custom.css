@@ -70,6 +70,11 @@
 #resetFilters{display:inline-block; width:200px;}
 #resetButton{width:200px}
 
+#searchButton{
+    width:100%;
+    margin-top: 20px;
+    background-color: #8b96a8;}
+
 #filter_elements .typeahead
 {
     /* override typeahead.js's transparent background */

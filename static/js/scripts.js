@@ -121,6 +121,12 @@ function configure() {
         }
     });
 
+    $("#searchButton").click(
+        function(event){
+            load_stats()
+        }
+    );
+
     // initialize tooltipster on form input elements
     $('#filter_elements input[type="text"]').tooltipster({
         theme: 'tooltipster-punk',

@@ -19,7 +19,7 @@ from sqlalchemy.sql import func
 
 # global variables
 DEBUG = True
-N_TO_CACHE = 100
+N_TO_CACHE = 10000
 
 
 def download_morgues(base_url, base_folder):
@@ -200,7 +200,8 @@ def stats(**kwargs):
     keys.sort()
     request = "?"
     for key in keys:
-        request += "{}={}&".format(key, kwargs[key][0])
+        if key != "caching":
+            request += "{}={}&".format(key, kwargs[key][0])
 
     # if it has been searched
     stat = StatRequest.query.filter(StatRequest.request == request).first()
@@ -210,7 +211,10 @@ def stats(**kwargs):
             json_data = json.load(open("cached/{}.json".format(request)))
             stat.times += 1
             db_session.commit()
-            return jsonify(json_data)
+            if "caching" not in kwargs:
+                return jsonify(json_data)
+            else:
+                return()
         else:
             stat.times += 1
             db_session.commit()
@@ -293,7 +297,10 @@ def stats(**kwargs):
         if not case:
             # if abv was passed, but it wasnt a race, bg or combo
             results["ERROR"] = "No results for your query"
-            return jsonify(results)
+            if "caching" not in kwargs:
+                return jsonify(results)
+            else:
+                return()
 
     # apply filters provided in kwargs
     if "god" in kwargs:
@@ -341,7 +348,10 @@ def stats(**kwargs):
     # if after applying filters there's no result
     if not morgues.first():
         results["ERROR"] = "No results for your query"
-        return jsonify(results)
+        if "caching" not in kwargs:
+            return jsonify(results)
+        else:
+            return()
 
     if DEBUG:
         print("{} s to filter.".format(time() - t))
@@ -350,44 +360,44 @@ def stats(**kwargs):
     # most common branch_order
 
     # get the most traveserd branch order
-    results["branch_order"] = get_medium_branch_order(
-        [morgue.branch_order for morgue in morgues.all()])
+    # results["branch_order"] = get_medium_branch_order(
+    #     [morgue.branch_order for morgue in morgues.all()])
 
     # calculate a lot of means
     results["mean_time"] = round(
-        float(
+        custom_float(
             db_session.query(func.avg(Morgue.time)).filter(text(db_filter))
             .first()[0]) / 3600, 2)
     results["mean_turns"] = round(
-        float(
+        custom_float(
             db_session.query(func.avg(Morgue.turns)).filter(text(db_filter))
             .first()[0]), 2)
     results["mean_XL"] = round(
-        float(
+        custom_float(
             db_session.query(func.avg(Morgue.XL)).filter(text(db_filter))
             .first()[0]), 2)
     results["mean_Str"] = round(
-        float(
+        custom_float(
             db_session.query(func.avg(Morgue.Str)).filter(text(db_filter))
             .first()[0]), 2)
     results["mean_AC"] = round(
-        float(
+        custom_float(
             db_session.query(func.avg(Morgue.AC)).filter(text(db_filter))
             .first()[0]), 2)
     results["mean_Int"] = round(
-        float(
+        custom_float(
             db_session.query(func.avg(Morgue.Int)).filter(text(db_filter))
             .first()[0]), 2)
     results["mean_EV"] = round(
-        float(
+        custom_float(
             db_session.query(func.avg(Morgue.EV)).filter(text(db_filter))
             .first()[0]), 2)
     results["mean_Dex"] = round(
-        float(
+        custom_float(
             db_session.query(func.avg(Morgue.Dex)).filter(text(db_filter))
             .first()[0]), 2)
     results["mean_SH"] = round(
-        float(
+        custom_float(
             db_session.query(func.avg(Morgue.SH)).filter(text(db_filter))
             .first()[0]), 2)
 
@@ -448,7 +458,10 @@ def stats(**kwargs):
         print("{} s in total.".format(time() - t_tot))
 
     update_cached(stat, results)
-    return jsonify(results)
+    if "caching" not in kwargs:
+        return jsonify(results)
+    else:
+        return()
 
 
 def update_cached(stat, results):
@@ -528,3 +541,69 @@ if len(sys.argv) == 2:
 
         for server in servers:
             download_morgues(server["url"], server["folder"])
+
+
+def create_cached():
+    """Creates json of the more general searches"""
+    p = {
+        "success": ["0", "1"],
+        "version": ["0.13", "0.14", "0.15", "0.16", "0.17", "0.18", "0.19",
+                    "0.20", "0.21"],
+        "runes": ["3", "15"],
+        "god": [],
+        "abbreviation": []
+        }
+
+    for god in db_session.query(Morgue.god).distinct():
+        if god:
+            p["god"].append(god[0])
+
+    for race in db_session.query(Race_abbreviation.abbreviation).distinct():
+        if race:
+            p["abbreviation"].append(race[0])
+
+    for bg in db_session.query(BG_abbreviation.abbreviation).distinct():
+        if bg:
+            p["abbreviation"].append(bg[0])
+
+    print("general")
+    q = {"caching": True}
+    stats(**q)
+
+    for s in p["success"]:
+        q = {"success": [s], "caching": True}
+        print(q)
+        stats(**q)
+        for v in p["version"]:
+            q = {"success": [s], "version": [v], "caching": True}
+            print(q)
+            stats(**q)
+        for g in p["god"]:
+            q = {"success": [s], "god": [g], "caching": True}
+            print(q)
+            stats(**q)
+        for ab in p["abbreviation"]:
+            q = {"success": [s], "abbreviation": [ab], "caching": True}
+            print(q)
+            stats(**q)
+
+    for v in p["version"]:
+        q = {"version": [v], "caching": True}
+        print(q)
+        stats(**q)
+    for g in p["god"]:
+        q = {"god": [g], "caching": True}
+        print(q)
+        stats(**q)
+    for ab in p["abbreviation"]:
+        q = {"abbreviation": [ab], "caching": True}
+        print(q)
+        stats(**q)
+
+
+def custom_float(f):
+    """Allows converting None to 0"""
+    if f:
+        return(float(f))
+    else:
+        return(0.00)
