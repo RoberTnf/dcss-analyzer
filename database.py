@@ -3,7 +3,7 @@ from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 import os
 if 'RDS_DB_NAME' in os.environ:
-            db = os.environ['RDS_DB_NAME']
+            db = os.environ['dcss-analyzer']
             user = os.environ['RDS_USERNAME']
             pwd = os.environ['RDS_PASSWORD']
             host = os.environ['RDS_HOSTNAME']
