@@ -50,16 +50,14 @@
                                     <li><a href="{{url_for("about")}}">About</a></li>
                                 </ul>
                             </nav>
-
-                        <!-- Banner -->
-                            <section id="banner">
-                                <header>
-                                    {% block header %}{% endblock %}
-                                </header>
-                            </section>
+                        {% block header %}{% endblock %}
                         <!-- Main -->
                             <div id="main-wrapper">
+                                {%block main%}{% endblock %}
                             </div>
+                    </div>
+                    <div id=disclaimer>
+                        Disclaimer: DCSS-analyzer has nothing to do with the <a href=https://crawl.develz.org/>original game</a>.
                     </div>
                 </div>
         </div>

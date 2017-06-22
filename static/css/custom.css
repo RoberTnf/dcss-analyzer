@@ -1,3 +1,9 @@
+#disclaimer{
+    font-size:16px;
+    color:#9a9ca0;
+    text-align: center;
+}
+
 .filterText {
     font-size: 22px;
     color: #fff;
@@ -84,15 +90,15 @@
     width: 200px;
 }
 
+#nav{
+    margin-bottom: 50px;
+}
+
 #filter_elements .tt-menu {
     width: 200px;
 }
 #filterList h2{
     padding-top: 20px
-}
-
-#filter_list ul{
-    list-style-type: none;
 }
 
 #statStr {

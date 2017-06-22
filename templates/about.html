@@ -1,13 +1,41 @@
-{% extends "no-sidebar.html" %}
+{% extends "layout.html" %}
 
 {% block title %}
     About
 {% endblock %}
 
-{% block content %}
-<header>
-    <h2>About</h2>
-</header>
+{% block header %}
+{% endblock %}
+
+{% block main %}
+<section>
+    <header>
+        <h1>About</h1>
+    </header>
+    <p>
+        DCSS-analyzer is an statistical analysis tool used to view information about
+        large amount of DCSS games played on public servers.
+    </p>
+
+    <p>
+        It parses information from the morgues found on the following servers:
+    </p>
+
+        <ul id=aboutList>
+            <li>
+                <a href=http://crawl.xtahua.com/crawl/morgue/>Xtahua</a>
+            </li>
+            <li>
+                <a href=https://crawl.project357.org/morgue/>Project357</a>
+            </li>
+            <li>
+                <a href=http://crawl.berotato.org/crawl/morgue/>Berotato</a>
+            </li>
+        </ul>
+    <p>
+        The data is not complete, some games may not be added.
+    </p>
+</section>
 <section>
     <header>
         <h3>Author:</h3>
@@ -19,7 +47,6 @@
 <p>
     <ul class="social">
         <li><a class="icon fa-github" href="https://github.com/RoberTnf/SW"><span class="label">GitHub</span></a></li>
-        <li><a class="icon fa-google-plus" href="https://plus.google.com/117566883664966802510"><span class="label">Google Plus</span></a></li>
     </ul>
 </p>
 <section>
@@ -30,7 +57,14 @@
         HTML5 template by <a href="https://html5up.net/">html5up</a>.
     </p>
     <p>
-        The game, <a href="https://crawl.develz.org/"> DCSS </a>.
+        The wonderful game, <a href="https://crawl.develz.org/"> DCSS </a>.
     </p>
+    <section>
+        <header>
+            <h3>License</h3>
+        </header>
+        <p>
+            This work is under the <a href=https://github.com/RoberTnf/dcss-analyzer/blob/master/LICENSE>GNU GPL License</a>.
+        </p>
 </section>
 {% endblock %}
