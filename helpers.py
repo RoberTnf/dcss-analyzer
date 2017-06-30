@@ -241,13 +241,17 @@ def stats(**kwargs):
         t = time()
         t_tot = time()
 
-    if "abbreviation" in kwargs:
-        abv = kwargs["abbreviation"][0]
+    if "string" in kwargs and "(" in kwargs["string"][0]:
+        string = kwargs["string"][0].split("(")
+        abv = string[0][:-1]
+        string = string[1][:-1]
+        print(abv, string)
+
         if len(abv) == 2:
-            # check if abv is a race
-            if morgues.filter(Race_abbreviation.abbreviation == abv).first():
+            # check if string is a race
+            if morgues.filter(Race_abbreviation.string == string).first():
                 id = Race_abbreviation.query.filter(
-                    Race_abbreviation.abbreviation == abv).first()
+                    Race_abbreviation.string == string).first()
                 if id:
                     id = id.id
 
@@ -260,9 +264,10 @@ def stats(**kwargs):
                     case = "race"
 
             # check if abv is a background
-            elif morgues.filter(BG_abbreviation.abbreviation == abv).first():
+            elif morgues.filter(BG_abbreviation.string == string).first():
+                print(string)
                 id = BG_abbreviation.query.filter(
-                    BG_abbreviation.abbreviation == abv).first()
+                    BG_abbreviation.string == string).first()
                 if id:
                     id = id.id
 
@@ -301,6 +306,7 @@ def stats(**kwargs):
         if not case:
             # if abv was passed, but it wasnt a race, bg or combo
             results["ERROR"] = "No results for your query"
+            print("error, no case")
             if "caching" not in kwargs:
                 return jsonify(results)
             else:
@@ -348,6 +354,8 @@ def stats(**kwargs):
         else:
             db_filter += "morgues.version LIKE '{}%'"\
                 .format(kwargs["version"][0])
+
+    print(db_filter)
 
     # if after applying filters there's no result
     if not morgues.first():

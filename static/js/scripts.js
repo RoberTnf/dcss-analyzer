@@ -32,8 +32,8 @@ function load_stats(clicked = false) {
         var parameters = {}
         var statStr = "Stats for "
         if($("#selectAbbreviation").val() != null && $("#selectAbbreviation").val() != "") {
-            parameters.abbreviation = $("#selectAbbreviation").val();
-            statStr += parameters.abbreviation;
+            parameters.string = $("#selectAbbreviation").val();
+            statStr += parameters.string;
         }
         else {
             statStr += "every combination"
@@ -92,7 +92,7 @@ function configure() {
         source: search,
         templates: {
             suggestion: Handlebars.compile(
-                "<div> {{abbreviation}}, {{string}} </div>"
+                "<div> {{abbreviation}} ({{string}}) </div>"
             )
         }
     }
@@ -111,7 +111,7 @@ function configure() {
         $(this).typeahead('val', suggestion.suggestion);
     });
     $("#search .typeahead").on("typeahead:selected", function(eventObject, suggestion, name) {
-        $(this).typeahead('val', suggestion.abbreviation);
+        $(this).typeahead('val', "{0} ({1})".f(suggestion.abbreviation, suggestion.string));
     });
 
     // selection of main search
