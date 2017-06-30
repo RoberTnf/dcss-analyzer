@@ -526,27 +526,6 @@ def get_medium_branch_order(branch_orders):
         return (most_common_branch + "Z")
 
 
-if len(sys.argv) == 2:
-    if sys.argv[1] == "download":
-        servers = [
-            {
-                "url": "http://crawl.xtahua.com/crawl/morgue/",
-                "folder": "crawl-xtahua/"
-            },
-            {
-                "url": "https://crawl.project357.org/morgue/",
-                "folder": "crawl-project357/"
-            },
-            {
-                "url": "http://crawl.berotato.org/crawl/morgue/",
-                "folder": "crawl-berotato/"
-            },
-        ]
-
-        for server in servers:
-            download_morgues(server["url"], server["folder"])
-
-
 def create_cached():
     """Creates json of the more general searches"""
     p = {
@@ -611,3 +590,28 @@ def custom_float(f):
         return(float(f))
     else:
         return(0.00)
+
+
+if len(sys.argv) == 2:
+    if sys.argv[1] == "download":
+        servers = [
+            {
+                "url": "http://crawl.xtahua.com/crawl/morgue/",
+                "folder": "crawl-xtahua/"
+            },
+            {
+                "url": "https://crawl.project357.org/morgue/",
+                "folder": "crawl-project357/"
+            },
+            {
+                "url": "http://crawl.berotato.org/crawl/morgue/",
+                "folder": "crawl-berotato/"
+            },
+        ]
+
+        for server in servers:
+            download_morgues(server["url"], server["folder"])
+    elif sys.argv[1] == "cache":
+        create_cached()
+
+create_cached()
