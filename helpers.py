@@ -196,6 +196,10 @@ def stats(**kwargs):
 
     # ~~~~~~~~~~~~~~~~~~~~~~~~~ CACHE MANAGEMENT
     # create string with all kwargs
+
+    if not os.path.exists("cached"):
+        os.makedirs("cached")
+
     keys = list(kwargs.keys())
     keys.sort()
     request = "?"
