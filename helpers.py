@@ -32,6 +32,7 @@ def download_morgues(base_url, base_folder):
     resp_base = urllib.request.urlopen(base_url)
     soup_base = BeautifulSoup(
         resp_base, "lxml", from_encoding=resp_base.info().get_param('charset'))
+    db_morgues = db_session.query(Morgue.filename).all()
 
     # get links to each morgue for user
     for user in soup_base.find_all('a', href=True):
@@ -56,8 +57,8 @@ def download_morgues(base_url, base_folder):
             for morgue in re.findall(
                     re.compile("morgue.*\.txt"), soup_user.text):
                 # check if we already downloaded OR if it is already in the DB
-                if not os.path.isfile(directory + morgue) or \
-                        not Morgue.query.filter_by(filename=directory+morgue):
+                if not (os.path.isfile(directory + morgue) or \
+                       (morgue, ) in db_morgues):
                     if DEBUG:
                         print("Downloading {}: ".format(
                             base_url + user["href"] + morgue))
@@ -65,9 +66,17 @@ def download_morgues(base_url, base_folder):
                                                   morgue).read()
                     with open(directory + morgue, "wb") as f:
                         f.write(text)
+
+                    # add to DB
+                    print(morgue)
+                    run = Morgue(directory + morgue, directory.split("/")[1])
+                    if run.crawl and run.time:
+                        db_session.add(run)
+
                 elif DEBUG:
                     print("{} already exists".format(directory + morgue))
-
+        print("commit")
+        db_session.commit()
 
 def load_morgues_to_db(n=0):
     """Loads all the morgues present in directory "morgues" to DB.
