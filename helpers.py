@@ -18,7 +18,7 @@ from sqlalchemy.sql import func
 # import numpy as np
 
 # global variables
-DEBUG = True
+DEBUG = False
 N_TO_CACHE = 10000
 
 
@@ -68,14 +68,13 @@ def download_morgues(base_url, base_folder):
                         f.write(text)
 
                     # add to DB
-                    print(morgue)
                     run = Morgue(directory + morgue, directory.split("/")[1])
                     if run.crawl and run.time:
                         db_session.add(run)
 
                 elif DEBUG:
                     print("{} already exists".format(directory + morgue))
-        print("commit")
+        print(user["href"])
         db_session.commit()
 
 def load_morgues_to_db(n=0):
