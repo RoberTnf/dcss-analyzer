@@ -127,6 +127,12 @@ function configure() {
         }
     );
 
+    $("#resetButton").click(
+      function(event){
+        $("#search .typeahead").typeahead('val', "");
+      }
+    );
+
     // initialize tooltipster on form input elements
     $('#filter_elements input[type="text"]').tooltipster({
         theme: 'tooltipster-punk',
@@ -474,7 +480,7 @@ function display_stats(data, statStr) {
     $("#stats").append(statsHTML)
 }
 
-8
+
 function search(query, syncResults, asyncResults) {
     // get results
     var parameters = {
