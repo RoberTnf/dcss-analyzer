@@ -70,7 +70,11 @@ def download_morgues(base_url, base_folder):
                     # add to DB
                     run = Morgue(directory + morgue, directory.split("/")[1])
                     if run.crawl and run.time:
-                        db_session.add(run)
+                        try:
+                            db_session.add(run)
+                        except Exception:
+                            print("(EE)" + directory + morgue)
+                            pass
 
                 elif DEBUG:
                     print("{} already exists".format(directory + morgue))

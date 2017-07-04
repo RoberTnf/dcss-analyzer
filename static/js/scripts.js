@@ -159,7 +159,11 @@ function configure() {
             $(element).tooltipster('show');
         },
         success: function (label, element) {
-            $(element).tooltipster('hide');
+            // $(element).tooltipster('hide');
+            // Doesn't work because element is undefined???
+            // Resorted to this hack
+            $("#selectVersion").tooltipster("hide");
+            $("#selectRunes").tooltipster("hide");
         }
     });
 }
