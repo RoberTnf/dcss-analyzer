@@ -226,6 +226,10 @@ class Morgue(Base):
                     elif found5:
                         self.killer = "got out of the dungeon"
 
+                if self.killer:
+                    if len(self.killer) > 79:
+                        self.killer = None
+
                 found = re.search(branch_regex, line)
                 if found:
                     branch = found.group(1)

@@ -69,7 +69,7 @@ def download_morgues(base_url, base_folder):
 
                     # add to DB
                     run = Morgue(directory + morgue, directory.split("/")[1])
-                    if run.crawl and run.time:
+                    if run.crawl and run.time and run.killer:
                         try:
                             db_session.add(run)
                         except Exception:
