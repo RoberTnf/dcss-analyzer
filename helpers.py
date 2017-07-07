@@ -629,7 +629,7 @@ if len(sys.argv) == 2:
             },
         ]
 
-        for server in servers:
+        for server in servers[1:]:
             download_morgues(server["url"], server["folder"])
     elif sys.argv[1] == "cache":
         create_cached()
