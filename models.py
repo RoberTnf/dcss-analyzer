@@ -203,12 +203,13 @@ class Morgue(Base):
                             self.killer = found.group(1)
                         else:
                             self.killer = found.group(2)
-                        if "Lernaean" in self.killer:
-                            self.killer = "Lernaean hydra"
-                        elif "hydra" in self.killer:
-                            self.killer = "an hydra"
-                        elif "ghost" in self.killer:
-                            self.killer = "a ghost"
+                        if self.killer:
+                            if "Lernaean" in self.killer:
+                                self.killer = "Lernaean hydra"
+                            elif "hydra" in self.killer:
+                                self.killer = "an hydra"
+                            elif "ghost" in self.killer:
+                                self.killer = "a ghost"
                     elif found2:
                         self.killer = "starved"
                     elif re.search(re.compile("Rotted away (\(.*?\))"), line):
