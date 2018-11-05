@@ -9,7 +9,7 @@ entrypoints==0.2.2
 flake8==2.5.5
 flake8-docstrings==1.0.3
 flake8-polyfill==1.0.1
-Flask==0.12
+Flas>=0.12.3
 Flask-Bootstrap==3.3.7.1
 Flask-JSGlue==0.3.1
 flask-nav==0.6
@@ -53,7 +53,7 @@ pyparsing==2.2.0
 python-dateutil==2.6.0
 pyzmq==16.0.2
 qtconsole==4.2.1
-requests==2.13.0
+requests>=2.20.0
 simplegeneric==0.8.1
 six==1.10.0
 SQLAlchemy==1.1.6
